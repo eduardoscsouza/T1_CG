@@ -16,8 +16,8 @@ Eduardo Santos Carlos de Souza
 #define POST_WIDTH 0.1f
 #define BASE_WIDTH 4.0f
 
-#define X_SIZE 14.0f
-#define Y_SIZE 14.0f
+#define X_SIZE 5.0f
+#define Y_SIZE 5.0f
 #define GRASS_FRAC 0.4f
 
 #define SCALE 0.15f
@@ -191,6 +191,8 @@ void draw_background(GLfloat x_size, GLfloat y_size, GLfloat grass_frac)
 	}
 
 	//Desenho do arco iris
+
+	GLfloat rain_x = -(xsize_half*0.1),rain_y = (y_size*(grass_frac+0.1f)) - ysize_half;
 	//Vetores com as cores das faixas do arco-iris
 	GLfloat vr[5] = {0.6157f, 0.9412f, 0.3764f, 0.6157f, 0.9333f};
 	GLfloat vg[5] = {0.4627f, 0.5176f, 1.0000f, 1.0000f, 0.9765f};
@@ -198,10 +200,10 @@ void draw_background(GLfloat x_size, GLfloat y_size, GLfloat grass_frac)
 	//Loop que gera as 5 faixas
 	for (int i=0; i<5; i++){
 		glColor3f(vr[i], vg[i], vb[i]);
-		glVertex2f(-xsize_half, grassfrac_centered+4.0f + i*0.15f);
-		glVertex2f(-xsize_half, grassfrac_centered+4.0f + (i+1)*0.15f);
-		glVertex2f(-3.0f -(i+1)*0.15f, ysize_half);
-		glVertex2f(-3.0f -i*0.15f, ysize_half);
+		glVertex2f(-xsize_half, rain_y + i*0.15f);
+		glVertex2f(-xsize_half, rain_y + (i+1)*0.15f);
+		glVertex2f(rain_x -(i+1)*0.15f, ysize_half);
+		glVertex2f(rain_x -i*0.15f, ysize_half);
 	}
 	
 	glEnd();
