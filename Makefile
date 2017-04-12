@@ -1,8 +1,8 @@
 all:
-	gcc T1.c -lGL -lglut -lGLU
+	gcc T1.c -lGL -lglut -o Cata-Vento.out
 
 run:
-	./a.out
+	./Cata-Vento.out
 
 clean:
 	rm *.out
