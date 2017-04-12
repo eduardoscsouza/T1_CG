@@ -18,11 +18,12 @@ Eduardo Santos Carlos de Souza
 
 #define X_SIZE 14.0f
 #define Y_SIZE 14.0f
+#define GRASS_FRAC 0.4f
 
 #define SCALE 0.15f
 
 unsigned int seed;
-float angle;
+GLfloat angle;
 
 
 
@@ -31,13 +32,12 @@ Funcao para desenhar as pas do cata-vento.
 x_ori, y_ori, wingspan sao respectivamente 
 as coordenadas do centro e o tamanho das pas
 */
-void draw_wings(float x_ori, float y_ori, float wingspan)
+void draw_wings(GLfloat x_ori, GLfloat y_ori, GLfloat wingspan)
 {
-	glBegin(GL_QUADS);
-
 	//Definicao de variaveis que facilitam e organizam o codigo
-	float wing_half = wingspan / 2.0f;
-	float wing_oneandhalf = (wingspan+wing_half);
+	GLfloat wing_half = wingspan / 2.0f, wing_oneandhalf = (wingspan+wing_half);
+
+	glBegin(GL_QUADS);
 
 	//Quadrado central
 	glColor3f(1.0000f, 0.6352f, 0.9019f);
@@ -87,13 +87,12 @@ x_ori, y_ori, post_height, post_width, base_width
 sao respectivamente as coordenadas do centro, altura e largura dos
 postes, e largura da base toda do suporte
 */
-void draw_post(float x_ori, float y_ori, float post_height, float post_width, float base_width)
+void draw_post(GLfloat x_ori, GLfloat y_ori, GLfloat post_height, GLfloat post_width, GLfloat base_width)
 {
-	glBegin(GL_QUADS);
-
 	//Definicao de variaveis que facilitam e organizam o codigo
-	float post_half = post_width / 2.0f;
-	float base_half = base_width / 2.0f;
+	GLfloat post_half = post_width / 2.0f, base_half = base_width / 2.0f;
+
+	glBegin(GL_QUADS);
 
 	//Poste da direita
 	glColor3f(1.0000f, 0.6352f, 0.9019f);
@@ -122,42 +121,49 @@ void draw_post(float x_ori, float y_ori, float post_height, float post_width, fl
 	glEnd();
 }
 
-void draw_background(float x_size, float y_size)
+/*
+Funcao para desenhar o plano de fundo
+x_size, y_size, grass_frac sao respectivamente as dimensoes do plano
+de fundo e a fracao que deve ser grama(e por conseuqncia o resto sera o ceu)
+*/
+void draw_background(GLfloat x_size, GLfloat y_size, GLfloat grass_frac)
 {
-	float half = x_size / 2.0f;
+	//Definicao de variaveis que facilitam e organizam o codigo
+	GLfloat xsize_half = x_size / 2.0f, ysize_half = y_size / 2.0f;
+	GLfloat grassfrac_centered = (y_size*grass_frac) - ysize_half;
 
 	glBegin(GL_QUADS);
 
-	glColor3f(0.4016f, 0.7718f, 0.3827f);
-	glVertex2f(-half, -half);
-	glVertex2f(-half, -(half*0.2f));
-	glVertex2f(+half, -(half*0.2f));
-	glVertex2f(+half, -half);
-
+	//Grama na parte inferior do plano de fundo
+	glColor3f(0.5020f, 0.9647f, 0.4784f);
+	glVertex2f(-xsize_half, -ysize_half);
+	glVertex2f(-xsize_half, grassfrac_centered);
+	glVertex2f(+xsize_half, grassfrac_centered);
+	glVertex2f(+xsize_half, -ysize_half);
+	
+	//Ceu na parte superior do plano de fundo
 	glColor3f(0.0000f, 0.0000f, 0.0000f);
-	glVertex2f(+half, +half);
-	glVertex2f(-half, +half);
+	glVertex2f(+xsize_half, +ysize_half);
+	glVertex2f(-xsize_half, +ysize_half);
 	glColor3f(1.0000f, 0.2471f, 0.0039f);
-	glVertex2f(-half, -(half*0.2f));
-	glVertex2f(+half, -(half*0.2f));
+	glVertex2f(-xsize_half, grassfrac_centered);
+	glVertex2f(+xsize_half, grassfrac_centered);
 
-	float vr[5] = {0.6157f, 0.9412f, 0.3764f, 0.6157f, 0.9333f};
-	float vg[5] = {0.4627f, 0.5176f, 1.0000f, 1.0000f, 0.9765f};
-	float vb[5] = {0.6431f, 0.8353f, 1.0000f, 0.7333f, 0.7255f};
-	for (int i=0; i<5; i++){
-		glColor3f(vr[i], vg[i], vb[i]);
-		glVertex2f(-half-1.00f + i*0.15f, +(half*0.2f));
-		glVertex2f(-half-0.85f + i*0.15f, +(half*0.2f));
-		glVertex2f(-half+5.15f + i*0.15f, +half);
-		glVertex2f(-half+5.00f + i*0.15f, +half);
-	}
-
+	//Desenho das estrelas
+	/*
+	Elas sao geradas com uma sequencia aleatoria de numeros,
+	entao para manter constante a sequencia toda vez que a cena
+	for desenhada, reseta-se a seed.
+	*/
 	srand(seed);
+	//Loop que gera 20 estrelas
 	for (int i=0; i<20; i++){
-		float cur_x = ((rand() % (int)((1.8f*half)*1000.f))/1000.f) - (half*0.90f);
-		float cur_y = ((rand() % (int)((0.3f*half)*1000.f))/1000.f) + (half*0.55f);
+		//Geracao das coordenadas x e y da estrela
+		GLfloat cur_x = ((rand() % (int)((1.8f*xsize_half)*1000.f))/1000.f) - (xsize_half*0.90f);
+		GLfloat cur_y = ((rand() % (int)((0.3f*ysize_half)*1000.f))/1000.f) + (ysize_half*0.55f);
 		
-		float r, g, b;
+		//Switch para definir a cor da estrela(tambem aleatoria)
+		GLfloat r, g, b;
 		switch (rand() % 4){
 			case 0:
 				r=0.9215f;g=0.9876f;b=1.0000f;
@@ -176,11 +182,26 @@ void draw_background(float x_size, float y_size)
 				break;
 		}
 
+		//Desenhar a estrela
 		glColor3f(r, g, b);
 		glVertex2f(cur_x, cur_y);
 		glVertex2f(cur_x-0.075f, cur_y-0.075f);
 		glVertex2f(cur_x, cur_y-0.15f);
 		glVertex2f(cur_x+0.075f, cur_y-0.075f);
+	}
+
+	//Desenho do arco iris
+	//Vetores com as cores das faixas do arco-iris
+	GLfloat vr[5] = {0.6157f, 0.9412f, 0.3764f, 0.6157f, 0.9333f};
+	GLfloat vg[5] = {0.4627f, 0.5176f, 1.0000f, 1.0000f, 0.9765f};
+	GLfloat vb[5] = {0.6431f, 0.8353f, 1.0000f, 0.7333f, 0.7255f};
+	//Loop que gera as 5 faixas
+	for (int i=0; i<5; i++){
+		glColor3f(vr[i], vg[i], vb[i]);
+		glVertex2f(-xsize_half, grassfrac_centered+4.0f + i*0.15f);
+		glVertex2f(-xsize_half, grassfrac_centered+4.0f + (i+1)*0.15f);
+		glVertex2f(-3.0f -(i+1)*0.15f, ysize_half);
+		glVertex2f(-3.0f -i*0.15f, ysize_half);
 	}
 	
 	glEnd();
@@ -202,7 +223,7 @@ void draw_all()
 	glScalef(SCALE, SCALE, SCALE);
 
 	//Desenhar as partes estaticas da cena
-	draw_background(X_SIZE, Y_SIZE);
+	draw_background(X_SIZE, Y_SIZE, GRASS_FRAC);
 	draw_post(X_ORI, Y_ORI, POST_HEIGHT, POST_WIDTH, BASE_WIDTH);
 
 	//Aplicar a rotacao em relacao ao eixo central do cata-vento
@@ -221,12 +242,18 @@ void draw_all()
 
 /*
 Funcao que incrementa ou decrementa o angulo
-do cata-vento quando o mouse e clicado
+do cata-vento quando o mouse e clicado, e faz com
+que a tela seja atualizada
 */
 void mouse_call(int button, int state, int x, int y)
 {
-	if (state == GLUT_DOWN)
+	if (state == GLUT_DOWN){
+		//Incrementar ou decrementar o angulo em 5 graus
 		angle += ((button==GLUT_LEFT_BUTTON) ? ANGLE_STEP : ((button==GLUT_RIGHT_BUTTON) ? -ANGLE_STEP : 0.0f));
+
+		//Fazer com que a cena seja atualizada
+		glutPostRedisplay();
+	}
 }
 
 
@@ -245,7 +272,6 @@ int main(int argc, char * argv[])
 	glMatrixMode(GL_MODELVIEW);
 
 	glutMouseFunc(&mouse_call);
-	glutIdleFunc(&glutPostRedisplay);
 	glutDisplayFunc(&draw_all);
 
 	glutMainLoop();
