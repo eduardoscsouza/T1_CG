@@ -16,7 +16,7 @@ Eduardo Santos Carlos de Souza
 #define POST_WIDTH 0.1f
 #define BASE_WIDTH 4.0f
 
-#define X_SIZE 12.0f
+#define X_SIZE 14.0f
 #define Y_SIZE 14.0f
 
 #define SCALE 0.15f
