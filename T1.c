@@ -8,16 +8,16 @@ Eduardo Santos Carlos de Souza
 #include <GL/glut.h>
 
 #define X_ORI 0.0f
-#define Y_ORI 1.5f
-#define WINGSPAN 1.0f
+#define Y_ORI 2.0f
+#define WINGSPAN 1.2f
 #define ANGLE_STEP 5.0f
 
 #define POST_HEIGHT 5.0f
-#define POST_WIDTH 0.1f
-#define BASE_WIDTH 4.0f
+#define POST_WIDTH 0.15f
+#define BASE_WIDTH 3.5f
 
-#define X_SIZE 5.0f
-#define Y_SIZE 5.0f
+#define X_SIZE 14.0f
+#define Y_SIZE 14.0f
 #define GRASS_FRAC 0.4f
 
 #define SCALE 0.15f
@@ -262,17 +262,20 @@ void mouse_call(int button, int state, int x, int y)
 
 int main(int argc, char * argv[])
 {
+	//Inicializacao do glut
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_SINGLE);
 	glutInitWindowPosition(20, 20);
 	glutInitWindowSize(600, 600);
 	glutCreateWindow("Cata-Vento");
 
+	//Setar as variabeis globais e parametros do OpenGL
 	seed = time(NULL);
 	angle = 0.0f;
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glMatrixMode(GL_MODELVIEW);
 
+	//Setar as funcoes de callback
 	glutMouseFunc(&mouse_call);
 	glutDisplayFunc(&draw_all);
 
