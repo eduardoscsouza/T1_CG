@@ -8,13 +8,14 @@ Eduardo Santos Carlos de Souza
 
 #define SHIP_SCALE 0.20f
 #define SHIP_Y_OFFSET -0.9f
-#define SHIP_STEP 0.03f
+#define SHIP_STEP 0.02f
+#define SHIP_DELAY 30
 
 #define MISSILE_SCALE 0.07f
 #define MISSILE_STEP 0.05f
 #define MISSILE_DELAY 30
 
-#define ALIEN_FLEET_ROWS 12
+#define ALIEN_FLEET_ROWS 6
 #define ALIEN_FLEET_COLUMNS 8
 #define ALIEN_BOX_X 0.15f
 #define ALIEN_BOX_Y 0.07875f
@@ -31,9 +32,10 @@ typedef struct
 }AlienShip;
 
 GLfloat ship_x;
+char ship_dir;
 AlienShip *fleet;
 GLfloat missile_x, missile_y;
-char missile_firing;
+bool missile_firing;
 
 void draw_ship();
 void draw_alien(GLfloat, GLfloat);
@@ -44,9 +46,14 @@ void draw_all();
 void detect_colision();
 void build_alien_fleet();
 
-void special_call(int, int, int);
-void keyboard_call(unsigned char, int, int);
+void special_up_call(int, int, int);
+void special_down_call(int, int, int);
+void keyboard_down_call(unsigned char, int, int);
+
 void move_missile(int);
+void move_ship(int);
+
+
 
 /*
 */
@@ -185,19 +192,23 @@ void detect_colision()
 
 /*
 */
-void special_call(int key, int x, int y)
+void special_up_call(int key, int x, int y)
 {
-	if (key == GLUT_KEY_LEFT) ship_x -= SHIP_STEP;
-	else if (key == GLUT_KEY_RIGHT) ship_x += SHIP_STEP;
-
-	ship_x = (ship_x>1.0f) ? 1.0f : ((ship_x<-1.0f) ? -1.0f : ship_x);
-
-	glutPostRedisplay();
+	if (key == GLUT_KEY_LEFT) ship_dir++;
+	else if (key == GLUT_KEY_RIGHT) ship_dir--;
 }
 
 /*
 */
-void keyboard_call(unsigned char key, int x, int y)
+void special_down_call(int key, int x, int y)
+{
+	if (key == GLUT_KEY_LEFT) ship_dir--;
+	else if (key == GLUT_KEY_RIGHT) ship_dir++;
+}
+
+/*
+*/
+void keyboard_down_call(unsigned char key, int x, int y)
 {
 	if (key == ' '){
 		if (!missile_firing){
@@ -208,9 +219,9 @@ void keyboard_call(unsigned char key, int x, int y)
 			glutTimerFunc(MISSILE_DELAY, &move_missile, 0);
 		}
 	}
-
-	glutPostRedisplay();
 }
+
+
 
 void move_missile(int value)
 {
@@ -218,7 +229,19 @@ void move_missile(int value)
 	detect_colision();
 
 	glutPostRedisplay();
-	if (missile_firing) glutTimerFunc(MISSILE_DELAY, &move_missile, 1);
+	if (missile_firing) glutTimerFunc(MISSILE_DELAY, &move_missile, 0);
+}
+
+void move_ship(int value)
+{
+	if (ship_dir){
+		ship_x += ship_dir * SHIP_STEP;
+		ship_x = (ship_x>1.0f) ? 1.0f : ((ship_x<-1.0f) ? -1.0f : ship_x);
+
+		glutPostRedisplay();
+	}
+
+	glutTimerFunc(SHIP_DELAY, &move_ship, 0);
 }
 
 
@@ -236,13 +259,17 @@ int main(int argc, char * argv[])
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glMatrixMode(GL_MODELVIEW);
 	ship_x = 0.0f;
+	ship_dir = 0;
 	missile_firing = 0;
 	missile_x = missile_y = -1.0f;
 
 	//Setar as funcoes de callback
-	glutSpecialFunc(&special_call);
-	glutKeyboardFunc(&keyboard_call);
+	glutIgnoreKeyRepeat(1);
+	glutSpecialFunc(&special_down_call);
+	glutKeyboardFunc(&keyboard_down_call);
+	glutSpecialUpFunc(&special_up_call);
 	glutDisplayFunc(&draw_all);
+	glutTimerFunc(0, &move_ship, 0);
 
 	build_alien_fleet();
 	glutMainLoop();
