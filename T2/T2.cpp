@@ -4,7 +4,8 @@ Eduardo Santos Carlos de Souza
 */
 
 #include <GL/glut.h>
-#include <stdlib.h>
+#include <cstdlib>
+#include <cmath>
 
 #define SHIP_SCALE 0.20f
 #define SHIP_Y_OFFSET -0.9f
@@ -25,6 +26,8 @@ Eduardo Santos Carlos de Souza
 #define ALIEN_FLEET_RIGHT_MOV 1
 #define ALIEN_FLEET_LEFT_MOV -1
 #define POS(i,j) (a * ALIEN_FLEET_COLUMNS + j)
+
+#define EUCL_DIST(x1, y1, x2, y2) (sqrt(((x1)-(x2)) * ((x1)-(x2)) + ((y1)-(y2)) * ((y1)-(y2))))
 
 typedef struct
 {
@@ -162,15 +165,17 @@ void draw_fleet()
 
 	for (i = 0; i < ALIEN_FLEET_ROWS * ALIEN_FLEET_COLUMNS; i++)
 	{
-		glPushMatrix();
+		if (fleet[i].alive){
+			glPushMatrix();
 
-		glTranslatef(fleet[i].x_pos + 0.2, fleet[i].y_pos - 0.1, 0.0f);
-		glScalef(ALIEN_BOX_X / 0.4, ALIEN_BOX_Y / 0.2, 1.0f);
-		glTranslatef(-(fleet[i].x_pos + 0.2), -(fleet[i].y_pos - 0.1), 0.0f);
+			glTranslatef(fleet[i].x_pos + 0.2, fleet[i].y_pos - 0.1, 0.0f);
+			glScalef(ALIEN_BOX_X / 0.4, ALIEN_BOX_Y / 0.2, 1.0f);
+			glTranslatef(-(fleet[i].x_pos + 0.2), -(fleet[i].y_pos - 0.1), 0.0f);
 
-		draw_alien(fleet[i].x_pos, fleet[i].y_pos, (i/ALIEN_FLEET_COLUMNS)/2);
+			draw_alien(fleet[i].x_pos, fleet[i].y_pos, (i/ALIEN_FLEET_COLUMNS)/2);
 
-		glPopMatrix();
+			glPopMatrix();
+		}
 	}
 }
 
@@ -242,8 +247,16 @@ void build_alien_fleet()
 void detect_colision()
 {
 	if (missile_y > 1.0f) {
-		missile_firing = 0;
+		missile_firing = false;
 		missile_x = missile_y = -1.0f;
+	}
+
+	for (int i=0; i<ALIEN_FLEET_COLUMNS*ALIEN_FLEET_ROWS && missile_firing; i++){
+		if (fleet[i].alive && EUCL_DIST(missile_x-0.2, missile_y+0.1, fleet[i].x_pos, fleet[i].y_pos) < ((ALIEN_BOX_X+ALIEN_BOX_Y)/2)*0.8) {
+			missile_firing = false;
+			missile_x = missile_y = -1.0f;
+			fleet[i].alive = false;
+		}
 	}
 }
 
