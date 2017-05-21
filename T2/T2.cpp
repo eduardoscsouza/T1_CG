@@ -74,6 +74,7 @@ void alien_fire(int);
 
 
 /*
+Desenha a nave centrada em (0, 0)
 */
 void draw_ship()
 {
@@ -192,6 +193,7 @@ void draw_fleet()
 }
 
 /*
+Desenha o missel centrado em (0, 0)
 */
 void draw_missile()
 {
@@ -210,6 +212,9 @@ void draw_missile()
 	glEnd();
 }
 
+/*
+Desenha a tela de "GAME OVER"
+*/
 void draw_endgame()
 {
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -224,6 +229,7 @@ void draw_endgame()
 }
 
 /*
+Desenha a cena completa
 */
 void draw_all()
 {
@@ -264,6 +270,9 @@ void draw_all()
 
 
 /*
+Detecta as colisoes entre o missel da sua nave
+e os alienagenas, e entre o missel dos alienigenas
+e sua nave
 */
 void detect_colision()
 {
@@ -322,6 +331,8 @@ void build_alien_fleet()
 
 
 /*
+Funcao chamada quando uma tecla especial
+do teclado e solta
 */
 void special_up_call(int key, int x, int y)
 {
@@ -330,6 +341,8 @@ void special_up_call(int key, int x, int y)
 }
 
 /*
+Funcao chamada quando uma tecla especial
+do teclado e apertada
 */
 void special_down_call(int key, int x, int y)
 {
@@ -338,6 +351,8 @@ void special_down_call(int key, int x, int y)
 }
 
 /*
+Funcao chamada quando uma tecla
+do teclado e apertada
 */
 void keyboard_down_call(unsigned char key, int x, int y)
 {
@@ -352,6 +367,10 @@ void keyboard_down_call(unsigned char key, int x, int y)
 
 
 
+/*
+Funcao que move o seu missel e o
+missel dos alienigenas
+*/
 void move_missile(int value)
 {
 	if (missile_firing) missile_y += MISSILE_STEP;
@@ -367,6 +386,10 @@ void move_missile(int value)
 	if (!game_over) glutTimerFunc(MISSILE_DELAY, &move_missile, 0);
 }
 
+/*
+Funcao que move a sua nave de acordo
+com as teclas pressionadas
+*/
 void move_ship(int value)
 {
 	if (ship_dir) {
@@ -379,6 +402,8 @@ void move_ship(int value)
 	if (!game_over) glutTimerFunc(SHIP_DELAY, &move_ship, 0);
 }
 
+/*
+*/
 void move_alien_fleet(int value)
 {
 	int i;
@@ -415,6 +440,10 @@ void move_alien_fleet(int value)
 
 
 
+/*
+Funcao que escolhe aleatoriamente um
+alienigena para atirar
+*/
 void alien_fire(int value)
 {
 	int alien = -1;
