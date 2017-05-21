@@ -35,6 +35,7 @@ Leonardo Cesar Cerqueira
 #define EUCL_DIST(x1, y1, x2, y2) (sqrt(((x1)-(x2)) * ((x1)-(x2)) + ((y1)-(y2)) * ((y1)-(y2))))
 #define ALIEN_MISSILE_WAIT_TIME 1000
 
+/* Estrutura que representa uma nave alienigena*/
 typedef struct
 {
 	GLfloat x_pos;
@@ -91,6 +92,7 @@ void draw_ship()
 }
 
 /*
+Essa funcao desenha um alien, com seu design dependendo do valor passado em 'type'
 */
 void draw_alien(GLfloat x_coord, GLfloat y_coord, int type)
 {
@@ -171,6 +173,7 @@ void draw_alien(GLfloat x_coord, GLfloat y_coord, int type)
 }
 
 /*
+Essa funcao desenha toda a frota de aliens na tela, pulando os que ja estao mortos
 */
 void draw_fleet()
 {
@@ -263,6 +266,7 @@ void draw_all()
 }
 
 /*
+Essa funcao constroi a matriz de aliens
 */
 void build_alien_fleet()
 {
@@ -370,6 +374,9 @@ void move_ship(int value)
 	if (!game_over) glutTimerFunc(SHIP_DELAY, &move_ship, 0);
 }
 
+/*
+Essa funcao eh responsavel por mover a frota de aliens atraves da tela, movendo para baixo ao atingir as bordas
+*/
 void move_alien_fleet(int value)
 {
 	int i;
