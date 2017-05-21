@@ -6,8 +6,8 @@ Eduardo Santos Carlos de Souza
 #include <GL/glut.h>
 #include <cstdlib>
 #include <cmath>
-#include <cstdio>
 
+//Definicao de constantes do codigo
 #define SHIP_SCALE 0.20f
 #define SHIP_Y_OFFSET -0.9f
 #define SHIP_STEP 0.02f
@@ -54,10 +54,11 @@ void draw_ship();
 void draw_alien(GLfloat, GLfloat);
 void draw_fleet();
 void draw_missile();
-void draw_all();
 void draw_endgame();
+void draw_all();
 
 void detect_colision();
+
 void build_alien_fleet();
 
 void special_up_call(int, int, int);
@@ -66,6 +67,7 @@ void keyboard_down_call(unsigned char, int, int);
 
 void move_missile(int);
 void move_ship(int);
+void move_alien_fleet(int);
 
 void alien_fire(int);
 
@@ -259,20 +261,7 @@ void draw_all()
 	glFlush();
 }
 
-/*
-*/
-void build_alien_fleet()
-{
-	int i;
-	fleet = (AlienShip*)malloc(sizeof(AlienShip) * ALIEN_FLEET_ROWS * ALIEN_FLEET_COLUMNS);
 
-	for (i = 0; i < ALIEN_FLEET_ROWS * ALIEN_FLEET_COLUMNS; i++)
-	{
-		fleet[i].alive = true;
-		fleet[i].x_pos = ALIEN_FLEET_START_POS_X + ((i % ALIEN_FLEET_COLUMNS) * (ALIEN_BOX_X + ALIEN_SPACING));
-		fleet[i].y_pos = ALIEN_FLEET_START_POS_Y - ((i / ALIEN_FLEET_COLUMNS) * (ALIEN_BOX_Y + ALIEN_SPACING));
-	}
-}
 
 /*
 */
@@ -310,6 +299,23 @@ void detect_colision()
 		glutKeyboardFunc(NULL);
 		glutSpecialUpFunc(NULL);
 		glutDisplayFunc(&draw_endgame);
+	}
+}
+
+
+
+/*
+*/
+void build_alien_fleet()
+{
+	int i;
+	fleet = (AlienShip*)malloc(sizeof(AlienShip) * ALIEN_FLEET_ROWS * ALIEN_FLEET_COLUMNS);
+
+	for (i = 0; i < ALIEN_FLEET_ROWS * ALIEN_FLEET_COLUMNS; i++)
+	{
+		fleet[i].alive = true;
+		fleet[i].x_pos = ALIEN_FLEET_START_POS_X + ((i % ALIEN_FLEET_COLUMNS) * (ALIEN_BOX_X + ALIEN_SPACING));
+		fleet[i].y_pos = ALIEN_FLEET_START_POS_Y - ((i / ALIEN_FLEET_COLUMNS) * (ALIEN_BOX_Y + ALIEN_SPACING));
 	}
 }
 
@@ -408,6 +414,7 @@ void move_alien_fleet(int value)
 }
 
 
+
 void alien_fire(int value)
 {
 	int alien = -1;
@@ -419,6 +426,7 @@ void alien_fire(int value)
 	alien_missile_x = fleet[alien].x_pos + 0.2;
 	alien_missile_y = fleet[alien].y_pos - 0.1;
 }
+
 
 
 int main(int argc, char * argv[])
