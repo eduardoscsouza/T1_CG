@@ -211,6 +211,7 @@ void draw_missile()
 void draw_endgame()
 {
 	glClear(GL_COLOR_BUFFER_BIT);
+	glLoadIdentity();
 
 	glRasterPos2d(-0.1, 0.0);
 	char message[] = "GAME OVER";
@@ -253,7 +254,6 @@ void draw_all()
 
 		draw_fleet();
 	}
-	else glutDisplayFunc(&draw_endgame);
 
 	glutSwapBuffers();
 	glFlush();
@@ -304,7 +304,13 @@ void detect_colision()
 		}
 	}
 
-	if(alien_lives==0 || ship_lives==0) game_over=true;
+	if(alien_lives==0 || ship_lives==0){
+		game_over=true;
+		glutSpecialFunc(NULL);
+		glutKeyboardFunc(NULL);
+		glutSpecialUpFunc(NULL);
+		glutDisplayFunc(&draw_endgame);
+	}
 }
 
 
@@ -380,7 +386,13 @@ void move_alien_fleet(int value)
 	{
 		for (i = 0; i < ALIEN_FLEET_ROWS * ALIEN_FLEET_COLUMNS; i++){
 			fleet[i].y_pos -= ALIEN_BOX_Y;
-			if (fleet[i].alive && fleet[i].y_pos<=SHIP_Y_OFFSET+0.25) game_over=true;
+			if (fleet[i].alive && fleet[i].y_pos<=SHIP_Y_OFFSET+0.25){
+				game_over=true;
+				glutSpecialFunc(NULL);
+				glutKeyboardFunc(NULL);
+				glutSpecialUpFunc(NULL);
+				glutDisplayFunc(&draw_endgame);
+			}
 		}
 		fleet_direction *= -1;
 		glutPostRedisplay();
