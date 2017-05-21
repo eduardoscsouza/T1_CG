@@ -1,16 +1,13 @@
 /*
 Eduardo Santos Carlos de Souza
 9293481
-
-Leonardo Cesar Cerqueira
-8937483
 */
 
 #include <GL/glut.h>
 #include <cstdlib>
 #include <cmath>
-#include <cstdio>
 
+//Definicao de constantes do codigo
 #define SHIP_SCALE 0.20f
 #define SHIP_Y_OFFSET -0.9f
 #define SHIP_STEP 0.02f
@@ -35,7 +32,6 @@ Leonardo Cesar Cerqueira
 #define EUCL_DIST(x1, y1, x2, y2) (sqrt(((x1)-(x2)) * ((x1)-(x2)) + ((y1)-(y2)) * ((y1)-(y2))))
 #define ALIEN_MISSILE_WAIT_TIME 1000
 
-/* Estrutura que representa uma nave alienigena*/
 typedef struct
 {
 	GLfloat x_pos;
@@ -58,10 +54,11 @@ void draw_ship();
 void draw_alien(GLfloat, GLfloat);
 void draw_fleet();
 void draw_missile();
-void draw_all();
 void draw_endgame();
+void draw_all();
 
 void detect_colision();
+
 void build_alien_fleet();
 
 void special_up_call(int, int, int);
@@ -70,12 +67,14 @@ void keyboard_down_call(unsigned char, int, int);
 
 void move_missile(int);
 void move_ship(int);
+void move_alien_fleet(int);
 
 void alien_fire(int);
 
 
 
 /*
+Desenha a nave centrada em (0, 0)
 */
 void draw_ship()
 {
@@ -92,7 +91,6 @@ void draw_ship()
 }
 
 /*
-Essa funcao desenha um alien, com seu design dependendo do valor passado em 'type'
 */
 void draw_alien(GLfloat x_coord, GLfloat y_coord, int type)
 {
@@ -173,7 +171,6 @@ void draw_alien(GLfloat x_coord, GLfloat y_coord, int type)
 }
 
 /*
-Essa funcao desenha toda a frota de aliens na tela, pulando os que ja estao mortos
 */
 void draw_fleet()
 {
@@ -196,6 +193,7 @@ void draw_fleet()
 }
 
 /*
+Desenha o missel centrado em (0, 0)
 */
 void draw_missile()
 {
@@ -214,9 +212,13 @@ void draw_missile()
 	glEnd();
 }
 
+/*
+Desenha a tela de "GAME OVER"
+*/
 void draw_endgame()
 {
 	glClear(GL_COLOR_BUFFER_BIT);
+	glLoadIdentity();
 
 	glRasterPos2d(-0.1, 0.0);
 	char message[] = "GAME OVER";
@@ -227,6 +229,7 @@ void draw_endgame()
 }
 
 /*
+Desenha a cena completa
 */
 void draw_all()
 {
@@ -259,29 +262,17 @@ void draw_all()
 
 		draw_fleet();
 	}
-	else glutDisplayFunc(&draw_endgame);
 
 	glutSwapBuffers();
 	glFlush();
 }
 
-/*
-Essa funcao constroi a matriz de aliens
-*/
-void build_alien_fleet()
-{
-	int i;
-	fleet = (AlienShip*)malloc(sizeof(AlienShip) * ALIEN_FLEET_ROWS * ALIEN_FLEET_COLUMNS);
 
-	for (i = 0; i < ALIEN_FLEET_ROWS * ALIEN_FLEET_COLUMNS; i++)
-	{
-		fleet[i].alive = true;
-		fleet[i].x_pos = ALIEN_FLEET_START_POS_X + ((i % ALIEN_FLEET_COLUMNS) * (ALIEN_BOX_X + ALIEN_SPACING));
-		fleet[i].y_pos = ALIEN_FLEET_START_POS_Y - ((i / ALIEN_FLEET_COLUMNS) * (ALIEN_BOX_Y + ALIEN_SPACING));
-	}
-}
 
 /*
+Detecta as colisoes entre o missel da sua nave
+e os alienagenas, e entre o missel dos alienigenas
+e sua nave
 */
 void detect_colision()
 {
@@ -311,12 +302,37 @@ void detect_colision()
 		}
 	}
 
-	if(alien_lives==0 || ship_lives==0) game_over=true;
+	if(alien_lives==0 || ship_lives==0){
+		game_over=true;
+		glutSpecialFunc(NULL);
+		glutKeyboardFunc(NULL);
+		glutSpecialUpFunc(NULL);
+		glutDisplayFunc(&draw_endgame);
+	}
 }
 
 
 
 /*
+*/
+void build_alien_fleet()
+{
+	int i;
+	fleet = (AlienShip*)malloc(sizeof(AlienShip) * ALIEN_FLEET_ROWS * ALIEN_FLEET_COLUMNS);
+
+	for (i = 0; i < ALIEN_FLEET_ROWS * ALIEN_FLEET_COLUMNS; i++)
+	{
+		fleet[i].alive = true;
+		fleet[i].x_pos = ALIEN_FLEET_START_POS_X + ((i % ALIEN_FLEET_COLUMNS) * (ALIEN_BOX_X + ALIEN_SPACING));
+		fleet[i].y_pos = ALIEN_FLEET_START_POS_Y - ((i / ALIEN_FLEET_COLUMNS) * (ALIEN_BOX_Y + ALIEN_SPACING));
+	}
+}
+
+
+
+/*
+Funcao chamada quando uma tecla especial
+do teclado e solta
 */
 void special_up_call(int key, int x, int y)
 {
@@ -325,6 +341,8 @@ void special_up_call(int key, int x, int y)
 }
 
 /*
+Funcao chamada quando uma tecla especial
+do teclado e apertada
 */
 void special_down_call(int key, int x, int y)
 {
@@ -333,6 +351,8 @@ void special_down_call(int key, int x, int y)
 }
 
 /*
+Funcao chamada quando uma tecla
+do teclado e apertada
 */
 void keyboard_down_call(unsigned char key, int x, int y)
 {
@@ -347,6 +367,10 @@ void keyboard_down_call(unsigned char key, int x, int y)
 
 
 
+/*
+Funcao que move o seu missel e o
+missel dos alienigenas
+*/
 void move_missile(int value)
 {
 	if (missile_firing) missile_y += MISSILE_STEP;
@@ -362,6 +386,10 @@ void move_missile(int value)
 	if (!game_over) glutTimerFunc(MISSILE_DELAY, &move_missile, 0);
 }
 
+/*
+Funcao que move a sua nave de acordo
+com as teclas pressionadas
+*/
 void move_ship(int value)
 {
 	if (ship_dir) {
@@ -375,7 +403,6 @@ void move_ship(int value)
 }
 
 /*
-Essa funcao eh responsavel por mover a frota de aliens atraves da tela, movendo para baixo ao atingir as bordas
 */
 void move_alien_fleet(int value)
 {
@@ -390,7 +417,13 @@ void move_alien_fleet(int value)
 	{
 		for (i = 0; i < ALIEN_FLEET_ROWS * ALIEN_FLEET_COLUMNS; i++){
 			fleet[i].y_pos -= ALIEN_BOX_Y;
-			if (fleet[i].alive && fleet[i].y_pos<=SHIP_Y_OFFSET+0.25) game_over=true;
+			if (fleet[i].alive && fleet[i].y_pos<=SHIP_Y_OFFSET+0.25){
+				game_over=true;
+				glutSpecialFunc(NULL);
+				glutKeyboardFunc(NULL);
+				glutSpecialUpFunc(NULL);
+				glutDisplayFunc(&draw_endgame);
+			}
 		}
 		fleet_direction *= -1;
 		glutPostRedisplay();
@@ -406,6 +439,11 @@ void move_alien_fleet(int value)
 }
 
 
+
+/*
+Funcao que escolhe aleatoriamente um
+alienigena para atirar
+*/
 void alien_fire(int value)
 {
 	int alien = -1;
@@ -417,6 +455,7 @@ void alien_fire(int value)
 	alien_missile_x = fleet[alien].x_pos + 0.2;
 	alien_missile_y = fleet[alien].y_pos - 0.1;
 }
+
 
 
 int main(int argc, char * argv[])
