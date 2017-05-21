@@ -6,6 +6,7 @@ Eduardo Santos Carlos de Souza
 #include <GL/glut.h>
 #include <cstdlib>
 #include <cmath>
+#include <cstdio>
 
 #define SHIP_SCALE 0.20f
 #define SHIP_Y_OFFSET -0.9f
@@ -25,9 +26,11 @@ Eduardo Santos Carlos de Souza
 #define ALIEN_FLEET_START_POS_Y 1.0f
 #define ALIEN_FLEET_RIGHT_MOV 1
 #define ALIEN_FLEET_LEFT_MOV -1
+#define ALIEN_FLEET_DELAY 300
 #define POS(i,j) (a * ALIEN_FLEET_COLUMNS + j)
 
 #define EUCL_DIST(x1, y1, x2, y2) (sqrt(((x1)-(x2)) * ((x1)-(x2)) + ((y1)-(y2)) * ((y1)-(y2))))
+#define ALIEN_MISSILE_WAIT_TIME 1000
 
 typedef struct
 {
@@ -42,12 +45,17 @@ AlienShip *fleet;
 int fleet_direction = ALIEN_FLEET_RIGHT_MOV;
 GLfloat missile_x, missile_y;
 bool missile_firing;
+bool game_over;
+GLfloat alien_missile_x, alien_missile_y;
+char alien_missile_state;
+int ship_lives, alien_lives;
 
 void draw_ship();
 void draw_alien(GLfloat, GLfloat);
 void draw_fleet();
 void draw_missile();
 void draw_all();
+void draw_endgame();
 
 void detect_colision();
 void build_alien_fleet();
@@ -58,6 +66,8 @@ void keyboard_down_call(unsigned char, int, int);
 
 void move_missile(int);
 void move_ship(int);
+
+void alien_fire(int);
 
 
 
@@ -185,7 +195,6 @@ void draw_missile()
 {
 	glBegin(GL_LINE_STRIP);
 
-	glColor3f(1.0f, 0.0f, 0.0f);
 	glVertex2f(0.0f, 0.5f);
 	glVertex2f(0.1f, 0.4f);
 	glVertex2f(0.1f, -0.2f);
@@ -199,29 +208,52 @@ void draw_missile()
 	glEnd();
 }
 
+void draw_endgame()
+{
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glRasterPos2d(-0.1, 0.0);
+	char message[] = "GAME OVER";
+	for (int i=0; message[i]!='\0'; i++) glutBitmapCharacter(GLUT_BITMAP_8_BY_13, message[i]);
+
+	glutSwapBuffers();
+	glFlush();
+}
+
 /*
 */
 void draw_all()
 {
 	glClear(GL_COLOR_BUFFER_BIT);
-
 	glLoadIdentity();
-
-	glPushMatrix();
-	glTranslatef(ship_x, SHIP_Y_OFFSET, 0.0f);
-	glScalef(SHIP_SCALE, SHIP_SCALE, 1.0f);
-	draw_ship();
-	glPopMatrix();
-
-	if (missile_firing) {
+	if (!game_over){
 		glPushMatrix();
-		glTranslatef(missile_x, missile_y, 0.0f);
-		glScalef(MISSILE_SCALE, MISSILE_SCALE, 1.0f);
-		draw_missile();
+		glTranslatef(ship_x, SHIP_Y_OFFSET, 0.0f);
+		glScalef(SHIP_SCALE, SHIP_SCALE, 1.0f);
+		draw_ship();
 		glPopMatrix();
-	}
 
-	draw_fleet();
+		if (missile_firing) {
+			glPushMatrix();
+			glTranslatef(missile_x, missile_y, 0.0f);
+			glScalef(MISSILE_SCALE, MISSILE_SCALE, 1.0f);
+			glColor3f(0.0f, 1.0f, 0.0f);
+			draw_missile();
+			glPopMatrix();
+		}
+
+		if (alien_missile_state==2){
+			glPushMatrix();
+			glTranslatef(alien_missile_x, alien_missile_y, 0.0f);
+			glScalef(MISSILE_SCALE, -MISSILE_SCALE, 1.0f);
+			glColor3f(1.0f, 0.0f, 0.0f);
+			draw_missile();
+			glPopMatrix();
+		}
+
+		draw_fleet();
+	}
+	else glutDisplayFunc(&draw_endgame);
 
 	glutSwapBuffers();
 	glFlush();
@@ -246,7 +278,7 @@ void build_alien_fleet()
 */
 void detect_colision()
 {
-	if (missile_y > 1.0f) {
+	if (missile_firing && missile_y > 1.0f) {
 		missile_firing = false;
 		missile_x = missile_y = -1.0f;
 	}
@@ -256,8 +288,23 @@ void detect_colision()
 			missile_firing = false;
 			missile_x = missile_y = -1.0f;
 			fleet[i].alive = false;
+			alien_lives--;
 		}
 	}
+
+	if (alien_missile_state==2){
+		if (alien_missile_y<-1.0f) {
+			alien_missile_state = 0;
+			alien_missile_x = alien_missile_y = -1.0f;
+		}
+		if (EUCL_DIST(alien_missile_x, alien_missile_y, ship_x, SHIP_Y_OFFSET) < 0.1){
+			alien_missile_state = 0;
+			alien_missile_x = alien_missile_y = -1.0f;
+			ship_lives--;
+		}
+	}
+
+	if(alien_lives==0 || ship_lives==0) game_over=true;
 }
 
 
@@ -284,11 +331,9 @@ void keyboard_down_call(unsigned char key, int x, int y)
 {
 	if (key == ' ') {
 		if (!missile_firing) {
-			missile_firing = 1;
+			missile_firing = true;
 			missile_x = ship_x;
 			missile_y = SHIP_Y_OFFSET + (SHIP_SCALE * 0.5f) + (MISSILE_SCALE * 0.3f);
-
-			glutTimerFunc(MISSILE_DELAY, &move_missile, 0);
 		}
 	}
 }
@@ -298,10 +343,16 @@ void keyboard_down_call(unsigned char key, int x, int y)
 void move_missile(int value)
 {
 	if (missile_firing) missile_y += MISSILE_STEP;
-	detect_colision();
+	if (alien_missile_state==2) alien_missile_y -= MISSILE_STEP;
+	
+	if (missile_firing || (alien_missile_state==2)) detect_colision();
+	if (alien_missile_state==0){
+		alien_missile_state = 1;
+		if (!game_over) glutTimerFunc(ALIEN_MISSILE_WAIT_TIME, &alien_fire, 0);
+	}
 
 	glutPostRedisplay();
-	if (missile_firing) glutTimerFunc(MISSILE_DELAY, &move_missile, 0);
+	if (!game_over) glutTimerFunc(MISSILE_DELAY, &move_missile, 0);
 }
 
 void move_ship(int value)
@@ -313,7 +364,7 @@ void move_ship(int value)
 		glutPostRedisplay();
 	}
 
-	glutTimerFunc(SHIP_DELAY, &move_ship, 0);
+	if (!game_over) glutTimerFunc(SHIP_DELAY, &move_ship, 0);
 }
 
 void move_alien_fleet(int value)
@@ -327,21 +378,35 @@ void move_alien_fleet(int value)
 
 	if (move_down)
 	{
-		for (i = 0; i < ALIEN_FLEET_ROWS * ALIEN_FLEET_COLUMNS; i++)
-				fleet[i].y_pos -= ALIEN_BOX_Y;
+		for (i = 0; i < ALIEN_FLEET_ROWS * ALIEN_FLEET_COLUMNS; i++){
+			fleet[i].y_pos -= ALIEN_BOX_Y;
+			if (fleet[i].alive && fleet[i].y_pos<=SHIP_Y_OFFSET+0.25) game_over=true;
+		}
 		fleet_direction *= -1;
 		glutPostRedisplay();
-		glutTimerFunc(1000, move_alien_fleet, 1);
+		if (!game_over) glutTimerFunc(ALIEN_FLEET_DELAY, move_alien_fleet, 1);
 	}
 	else
 	{
 		for (i = 0; i < ALIEN_FLEET_ROWS * ALIEN_FLEET_COLUMNS; i++)
 			fleet[i].x_pos += 0.25 * ALIEN_BOX_X * fleet_direction;
 		glutPostRedisplay();
-		glutTimerFunc(750, move_alien_fleet, 0);
+		if (!game_over) glutTimerFunc(ALIEN_FLEET_DELAY, move_alien_fleet, 0);
 	}
 }
 
+
+void alien_fire(int value)
+{
+	int alien = -1;
+	do {
+		alien = rand() % (ALIEN_FLEET_ROWS * ALIEN_FLEET_COLUMNS);
+	}while(!fleet[alien].alive);
+
+	alien_missile_state = 2;
+	alien_missile_x = fleet[alien].x_pos + 0.2;
+	alien_missile_y = fleet[alien].y_pos - 0.1;
+}
 
 
 int main(int argc, char * argv[])
@@ -358,8 +423,11 @@ int main(int argc, char * argv[])
 	glMatrixMode(GL_MODELVIEW);
 	ship_x = 0.0f;
 	ship_dir = 0;
-	missile_firing = 0;
-	missile_x = missile_y = -1.0f;
+	alien_missile_state = missile_firing = 0;
+	alien_missile_x = alien_missile_y = missile_x = missile_y = -1.0f;
+	game_over = false;
+	ship_lives = 3;
+	alien_lives = ALIEN_FLEET_COLUMNS * ALIEN_FLEET_ROWS;
 
 	//Setar as funcoes de callback
 	glutIgnoreKeyRepeat(1);
@@ -368,7 +436,8 @@ int main(int argc, char * argv[])
 	glutSpecialUpFunc(&special_up_call);
 	glutDisplayFunc(&draw_all);
 	glutTimerFunc(0, &move_ship, 0);
-	glutTimerFunc(750, move_alien_fleet, 0);
+	glutTimerFunc(0, &move_missile, 0);
+	glutTimerFunc(750, &move_alien_fleet, 0);
 
 	build_alien_fleet();
 	glutMainLoop();
