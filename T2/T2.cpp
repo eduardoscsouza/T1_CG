@@ -1,6 +1,9 @@
 /*
 Eduardo Santos Carlos de Souza
 9293481
+
+Leonardo Cesar Cerqueira
+8937483
 */
 
 #include <GL/glut.h>
@@ -91,6 +94,7 @@ void draw_ship()
 }
 
 /*
+Desenha um alien na posicao x_coord, y_coord, de design definido por 'type'
 */
 void draw_alien(GLfloat x_coord, GLfloat y_coord, int type)
 {
@@ -171,6 +175,7 @@ void draw_alien(GLfloat x_coord, GLfloat y_coord, int type)
 }
 
 /*
+Desenha a frota de aliens, pulando os aliens que ja estao mortos
 */
 void draw_fleet()
 {
@@ -314,6 +319,7 @@ void detect_colision()
 
 
 /*
+Constroi a matriz de aliens, iniciando suas posicoes com espacamento entre um e outro
 */
 void build_alien_fleet()
 {
