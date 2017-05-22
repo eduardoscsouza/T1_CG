@@ -413,6 +413,7 @@ void move_ship(int value)
 }
 
 /*
+Essa funcao move a frota de aliens atraves da tela, movendo para baixo quando atinge a borda
 */
 void move_alien_fleet(int value)
 {
