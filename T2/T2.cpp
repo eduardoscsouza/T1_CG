@@ -225,6 +225,7 @@ void draw_endgame()
 	glClear(GL_COLOR_BUFFER_BIT);
 	glLoadIdentity();
 
+	glColor3f(1.0f, 0.0f, 0.0f);
 	glRasterPos2d(-0.1, 0.0);
 	char message[] = "GAME OVER";
 	for (int i=0; message[i]!='\0'; i++) glutBitmapCharacter(GLUT_BITMAP_8_BY_13, message[i]);
@@ -313,6 +314,7 @@ void detect_colision()
 		glutKeyboardFunc(NULL);
 		glutSpecialUpFunc(NULL);
 		glutDisplayFunc(&draw_endgame);
+		glutPostRedisplay();
 	}
 }
 
@@ -388,8 +390,10 @@ void move_missile(int value)
 		if (!game_over) glutTimerFunc(ALIEN_MISSILE_WAIT_TIME, &alien_fire, 0);
 	}
 
-	glutPostRedisplay();
-	if (!game_over) glutTimerFunc(MISSILE_DELAY, &move_missile, 0);
+	if (!game_over){
+		glutPostRedisplay();
+		glutTimerFunc(MISSILE_DELAY, &move_missile, 0);
+	}
 }
 
 /*
@@ -402,7 +406,7 @@ void move_ship(int value)
 		ship_x += ship_dir * SHIP_STEP;
 		ship_x = (ship_x>1.0f) ? 1.0f : ((ship_x<-1.0f) ? -1.0f : ship_x);
 
-		glutPostRedisplay();
+		if (!game_over) glutPostRedisplay();
 	}
 
 	if (!game_over) glutTimerFunc(SHIP_DELAY, &move_ship, 0);
@@ -429,18 +433,23 @@ void move_alien_fleet(int value)
 				glutKeyboardFunc(NULL);
 				glutSpecialUpFunc(NULL);
 				glutDisplayFunc(&draw_endgame);
+				glutPostRedisplay();
 			}
 		}
 		fleet_direction *= -1;
-		glutPostRedisplay();
-		if (!game_over) glutTimerFunc(ALIEN_FLEET_DELAY, move_alien_fleet, 1);
+		if (!game_over){ 
+			glutPostRedisplay();
+			glutTimerFunc(ALIEN_FLEET_DELAY, move_alien_fleet, 1);
+		}
 	}
 	else
 	{
 		for (i = 0; i < ALIEN_FLEET_ROWS * ALIEN_FLEET_COLUMNS; i++)
 			fleet[i].x_pos += 0.25 * ALIEN_BOX_X * fleet_direction;
-		glutPostRedisplay();
-		if (!game_over) glutTimerFunc(ALIEN_FLEET_DELAY, move_alien_fleet, 0);
+		if (!game_over) {
+			glutPostRedisplay();
+			glutTimerFunc(ALIEN_FLEET_DELAY, move_alien_fleet, 0);
+		}
 	}
 }
 
