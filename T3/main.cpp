@@ -1,0 +1,225 @@
+#include <stdlib.h>
+#include <math.h>
+
+
+#include"helper.h"
+
+// angle of rotation for the camera direction
+float angle = 0.0f;
+
+// actual vector representing the camera's direction
+float lx=0.0f,lz=-1.0f;
+
+// XZ position of the camera
+float x=0.0f, z=5.0f;
+
+// the key states. These variables will be zero
+//when no key is being presses
+float deltaAngle = 0.0f;
+float deltaMove = 0;
+int xOrigin = -1;
+
+void changeSize(int w, int h) {
+
+	// Prevent a divide by zero, when window is too short
+	// (you cant make a window of zero width).
+	if (h == 0)
+		h = 1;
+
+	float ratio =  w * 1.0 / h;
+
+	// Use the Projection Matrix
+	glMatrixMode(GL_PROJECTION);
+
+	// Reset Matrix
+	glLoadIdentity();
+
+	// Set the viewport to be the entire window
+	glViewport(0, 0, w, h);
+
+	// Set the correct perspective.
+	gluPerspective(45.0f, ratio, 0.1f, 100.0f);
+
+	// Get Back to the Modelview
+	glMatrixMode(GL_MODELVIEW);
+}
+
+
+
+void computePos(float deltaMove) {
+
+	x += deltaMove * lx * 0.1f;
+	z += deltaMove * lz * 0.1f;
+}
+
+void drawCube(float scale, float pos_x, float pos_z, float pos_y = 0.0f)
+{
+	
+	glLoadIdentity();
+	glTranslatef(pos_x, pos_y, pos_z);
+	glScalef(scale, scale, scale);
+
+	glBegin(GL_QUADS);          
+
+	// Top face (y = 1.0f)
+	glColor3f(0.0f, 1.0f, 0.0f);     // Green
+	glVertex3f(1.0f, 1.0f, -1.0f);
+	glVertex3f(-1.0f, 1.0f, -1.0f);
+	glVertex3f(-1.0f, 1.0f, 1.0f);
+	glVertex3f(1.0f, 1.0f, 1.0f);
+
+	// Bottom face (y = -1.0f)
+	glColor3f(1.0f, 0.5f, 0.0f);     // Orange
+	glVertex3f(1.0f, -1.0f, 1.0f);
+	glVertex3f(-1.0f, -1.0f, 1.0f);
+	glVertex3f(-1.0f, -1.0f, -1.0f);
+	glVertex3f(1.0f, -1.0f, -1.0f);
+
+	// Front face  (z = 1.0f)
+	glColor3f(1.0f, 0.0f, 0.0f);     // Red
+	glVertex3f(1.0f, 1.0f, 1.0f);
+	glVertex3f(-1.0f, 1.0f, 1.0f);
+	glVertex3f(-1.0f, -1.0f, 1.0f);
+	glVertex3f(1.0f, -1.0f, 1.0f);
+
+	// Back face (z = -1.0f)
+	glColor3f(1.0f, 1.0f, 0.0f);     // Yellow
+	glVertex3f(1.0f, -1.0f, -1.0f);
+	glVertex3f(-1.0f, -1.0f, -1.0f);
+	glVertex3f(-1.0f, 1.0f, -1.0f);
+	glVertex3f(1.0f, 1.0f, -1.0f);
+
+	// Left face (x = -1.0f)
+	glColor3f(0.0f, 0.0f, 1.0f);     // Blue
+	glVertex3f(-1.0f, 1.0f, 1.0f);
+	glVertex3f(-1.0f, 1.0f, -1.0f);
+	glVertex3f(-1.0f, -1.0f, -1.0f);
+	glVertex3f(-1.0f, -1.0f, 1.0f);
+
+	// Right face (x = 1.0f)
+	glColor3f(1.0f, 0.0f, 1.0f);     // Magenta
+	glVertex3f(1.0f, 1.0f, -1.0f);
+	glVertex3f(1.0f, 1.0f, 1.0f);
+	glVertex3f(1.0f, -1.0f, 1.0f);
+	glVertex3f(1.0f, -1.0f, -1.0f);
+	glEnd();  // End of drawing color-cube
+
+	glLoadIdentity();
+}
+
+
+float ang = 0;
+void renderScene(void) {
+
+	if (deltaMove)
+		computePos(deltaMove);
+
+	// Clear Color and Depth Buffers
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClearColor(0.0f, 0.0f, 0.0f , 1.0f);
+	// Reset transformations
+	glLoadIdentity();
+	// Set the camera
+	gluLookAt(x, 1.0f, z,
+			x+lx, 0.8f,  z+lz,
+			0.0f, 1.0f,  0.0f);
+	
+	glScalef(3,3,3);
+	glRotatef(180.0f, 0.0f , 1.0f , 0.0f);
+	//model to draw here...<<-----
+	DrawFrame();
+	drawCube(0.1f, -2.0f, -12.0f);
+
+   glutSwapBuffers();
+} 
+
+void processNormalKeys(unsigned char key, int xx, int yy) { 	
+
+        if (key == 27)
+		{
+			//clean before shutdown..
+			UnloadModel();
+              exit(0);
+		}
+} 
+
+void pressKey(int key, int xx, int yy) {
+
+       switch (key) {
+             case GLUT_KEY_UP : deltaMove = 0.1f; break;
+             case GLUT_KEY_DOWN : deltaMove = -0.1f; break;
+       }
+} 
+
+void releaseKey(int key, int x, int y) { 	
+
+        switch (key) {
+             case GLUT_KEY_UP :
+             case GLUT_KEY_DOWN : deltaMove = 0;break;
+        }
+} 
+
+void mouseMove(int x, int y) { 	
+
+         // this will only be true when the left button is down
+         if (xOrigin >= 0) {
+
+		// update deltaAngle
+		deltaAngle = (x - xOrigin) * 0.003f;
+
+		// update camera's direction
+		lx = sin(angle + deltaAngle);
+		lz = -cos(angle + deltaAngle);
+	}
+}
+
+void mouseButton(int button, int state, int x, int y) {
+
+	// only start motion if the left button is pressed
+	if (button == GLUT_LEFT_BUTTON) {
+
+		// when the button is released
+		if (state == GLUT_UP) {
+			angle += deltaAngle;
+			xOrigin = -1;
+		}
+		else  {// state = GLUT_DOWN
+			xOrigin = x;
+		}
+	}
+}
+
+int main(int argc, char **argv) {
+
+	// init GLUT and create window
+	glutInit(&argc, argv);
+	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
+	glutInitWindowPosition(100,100);
+	glutInitWindowSize(800,500);
+	glutCreateWindow("OBJ_Loader");
+
+
+	InitApp("pikachu/P2_Pikachu.obj");
+	//InitApp("C:/Users/Sho3la/Desktop/houses 3D/EpicCitadel.obj");
+	//InitApp("model2/Alex.obj");
+	//InitApp("model3/monster.obj");
+	// register callbacks
+	glutDisplayFunc(renderScene);
+	glutReshapeFunc(changeSize);
+	glutIdleFunc(renderScene);
+
+	glutIgnoreKeyRepeat(1);
+	glutKeyboardFunc(processNormalKeys);
+	glutSpecialFunc(pressKey);
+	glutSpecialUpFunc(releaseKey);
+
+	// here are the two new functions
+	glutMouseFunc(mouseButton);
+	glutMotionFunc(mouseMove);
+
+
+	// enter GLUT event processing cycle
+	glutMainLoop();
+
+	return 1;
+}
