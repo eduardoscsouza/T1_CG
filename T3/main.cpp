@@ -1,225 +1,187 @@
-#include <stdlib.h>
-#include <math.h>
-
+#include <cstdlib>
+#include <cmath>
+#include <ctime>
 
 #include"helper.h"
 
-// angle of rotation for the camera direction
-float angle = 0.0f;
+//angle of rotation
+float xpos = -50.0f, ypos = 10.0f, zpos = -40.0f, xrot = 0, yrot = 0, angle = 0.0;
 
-// actual vector representing the camera's direction
-float lx=0.0f,lz=-1.0f;
+float lastx, lasty;
 
-// XZ position of the camera
-float x=0.0f, z=5.0f;
+//positions of the cubes
+float positionz[10];
+float positiony[10];
+float positionx[10];
+float colors[10][3];
+float cRadius = 20.0f;
+float cRotation = 180.0f;
 
-// the key states. These variables will be zero
-//when no key is being presses
-float deltaAngle = 0.0f;
-float deltaMove = 0;
-int xOrigin = -1;
-
-void changeSize(int w, int h) {
-
-	// Prevent a divide by zero, when window is too short
-	// (you cant make a window of zero width).
-	if (h == 0)
-		h = 1;
-
-	float ratio =  w * 1.0 / h;
-
-	// Use the Projection Matrix
-	glMatrixMode(GL_PROJECTION);
-
-	// Reset Matrix
-	glLoadIdentity();
-
-	// Set the viewport to be the entire window
-	glViewport(0, 0, w, h);
-
-	// Set the correct perspective.
-	gluPerspective(45.0f, ratio, 0.1f, 100.0f);
-
-	// Get Back to the Modelview
-	glMatrixMode(GL_MODELVIEW);
+//set the positions of the cubes
+void objectPositions(void) 
+{ 
+	for (int i = 0; i<10; i++)
+	{
+		positionz[i] = float(rand() % 8 + 5);
+		positiony[i] = float(rand() % 8 + 5);
+		positionx[i] = float(rand() % 8 + 5);
+		colors[i][0] = float(rand() % 255) / 255;
+		colors[i][1] = float(rand() % 255) / 255;
+		colors[i][2] = float(rand() % 255) / 255;
+	}
 }
 
-
-
-void computePos(float deltaMove) {
-
-	x += deltaMove * lx * 0.1f;
-	z += deltaMove * lz * 0.1f;
-}
-
-void drawCube(float scale, float pos_x, float pos_z, float pos_y = 0.0f)
+//draw the cube
+void object(void) 
 {
-	
-	glLoadIdentity();
-	glTranslatef(pos_x, pos_y, pos_z);
-	glScalef(scale, scale, scale);
-
-	glBegin(GL_QUADS);          
-
-	// Top face (y = 1.0f)
-	glColor3f(0.0f, 1.0f, 0.0f);     // Green
-	glVertex3f(1.0f, 1.0f, -1.0f);
-	glVertex3f(-1.0f, 1.0f, -1.0f);
-	glVertex3f(-1.0f, 1.0f, 1.0f);
-	glVertex3f(1.0f, 1.0f, 1.0f);
-
-	// Bottom face (y = -1.0f)
-	glColor3f(1.0f, 0.5f, 0.0f);     // Orange
-	glVertex3f(1.0f, -1.0f, 1.0f);
-	glVertex3f(-1.0f, -1.0f, 1.0f);
-	glVertex3f(-1.0f, -1.0f, -1.0f);
-	glVertex3f(1.0f, -1.0f, -1.0f);
-
-	// Front face  (z = 1.0f)
-	glColor3f(1.0f, 0.0f, 0.0f);     // Red
-	glVertex3f(1.0f, 1.0f, 1.0f);
-	glVertex3f(-1.0f, 1.0f, 1.0f);
-	glVertex3f(-1.0f, -1.0f, 1.0f);
-	glVertex3f(1.0f, -1.0f, 1.0f);
-
-	// Back face (z = -1.0f)
-	glColor3f(1.0f, 1.0f, 0.0f);     // Yellow
-	glVertex3f(1.0f, -1.0f, -1.0f);
-	glVertex3f(-1.0f, -1.0f, -1.0f);
-	glVertex3f(-1.0f, 1.0f, -1.0f);
-	glVertex3f(1.0f, 1.0f, -1.0f);
-
-	// Left face (x = -1.0f)
-	glColor3f(0.0f, 0.0f, 1.0f);     // Blue
-	glVertex3f(-1.0f, 1.0f, 1.0f);
-	glVertex3f(-1.0f, 1.0f, -1.0f);
-	glVertex3f(-1.0f, -1.0f, -1.0f);
-	glVertex3f(-1.0f, -1.0f, 1.0f);
-
-	// Right face (x = 1.0f)
-	glColor3f(1.0f, 0.0f, 1.0f);     // Magenta
-	glVertex3f(1.0f, 1.0f, -1.0f);
-	glVertex3f(1.0f, 1.0f, 1.0f);
-	glVertex3f(1.0f, -1.0f, 1.0f);
-	glVertex3f(1.0f, -1.0f, -1.0f);
-	glEnd();  // End of drawing color-cube
-
-	glLoadIdentity();
+	for (int i = 0; i<10; i++)
+	{
+		glPushMatrix();
+		glTranslated(-positionx[i + 1] * 10, -positiony[i + 1] * 10, -positionz[i + 1] * 10); //translate the cube
+		glColor3f(colors[i][0], colors[i][1], colors[i][2]);
+		glutSolidTorus(2.5, 8.5, 50, 50);
+		glPopMatrix();
+	}
 }
 
-
-float ang = 0;
-void renderScene(void) {
-
-	if (deltaMove)
-		computePos(deltaMove);
-
-	// Clear Color and Depth Buffers
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glClearColor(0.0f, 0.0f, 0.0f , 1.0f);
-	// Reset transformations
-	glLoadIdentity();
-	// Set the camera
-	gluLookAt(x, 1.0f, z,
-			x+lx, 0.8f,  z+lz,
-			0.0f, 1.0f,  0.0f);
-	
-	glScalef(3,3,3);
-	glRotatef(180.0f, 0.0f , 1.0f , 0.0f);
-	//model to draw here...<<-----
+void model(void) 
+{
+	glPushMatrix();
+	glRotatef(cRotation, 0.0, 1.0, 0.0);
+	glScaled(10, 10, 10);
 	DrawFrame();
-	drawCube(0.1f, -2.0f, -12.0f);
+	glPopMatrix();
+}
 
-   glutSwapBuffers();
-} 
+void init(void) 
+{
+	objectPositions();
+}
 
-void processNormalKeys(unsigned char key, int xx, int yy) { 	
+void enable(void) 
+{
+	glEnable(GL_DEPTH_TEST); //enable the depth testing
+	glShadeModel(GL_SMOOTH); //set the shader to smooth shader
+}
 
-        if (key == 27)
-		{
-			//clean before shutdown..
-			UnloadModel();
-              exit(0);
-		}
-} 
+void display(void) 
+{
+	glClearColor(1.0, 1.0, 1.0, 1.0); //clear the screen to black
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //clear the color buffer and the depth buffer
+	glLoadIdentity();
+	enable();
+	glTranslatef(0.0f, 0.0f, -cRadius);
+	glRotatef(xrot, 1.0, 0.0, 0.0);
+	model(); //Our character to follow
 
-void pressKey(int key, int xx, int yy) {
+	glRotatef(yrot, 0.0, 1.0, 0.0);  //rotate our camera on the y - axis(up and down)
+	glTranslated(-xpos, -ypos, -zpos); //translate the screen to the position of our camera
+	glColor3f(1.0f, 1.0f, 1.0f);
+	object(); //call the cube drawing function
+	glutSwapBuffers(); //swap the buffers
+	//angle++; //increase the angle
+}
 
-       switch (key) {
-             case GLUT_KEY_UP : deltaMove = 0.1f; break;
-             case GLUT_KEY_DOWN : deltaMove = -0.1f; break;
-       }
-} 
+void reshape(int w, int h) 
+{
+	glViewport(0, 0, (GLsizei)w, (GLsizei)h); //set the viewport to the current window specifications
+	glMatrixMode(GL_PROJECTION); //set the matrix to projection
 
-void releaseKey(int key, int x, int y) { 	
+	glLoadIdentity();
+	gluPerspective(60, (GLfloat)w / (GLfloat)h, 1.0, 1000.0); //set the perspective (angle of sight, width, height, depth)
+	
+	glMatrixMode(GL_MODELVIEW); //set the matrix back to model
+}
 
-        switch (key) {
-             case GLUT_KEY_UP :
-             case GLUT_KEY_DOWN : deltaMove = 0;break;
-        }
-} 
+void keyboard(unsigned char key, int x, int y) 
+{
+	if (key == 'q')
+	{
+		cRotation += 45;
+		if (cRotation > 360) xrot -= 360;
+	}
 
-void mouseMove(int x, int y) { 	
+	if (key == 'z')
+	{
+		cRotation -= 45;
+		if (cRotation < -360) xrot += 360;
+	}
 
-         // this will only be true when the left button is down
-         if (xOrigin >= 0) {
+	if (key == 'w')
+	{
+		float xrotrad, yrotrad;
+		yrotrad = (yrot / 180 * 3.141592654f);
+		xrotrad = (xrot / 180 * 3.141592654f);
+		xpos += float(sin(yrotrad));
+		zpos -= float(cos(yrotrad));
+		ypos -= float(sin(xrotrad));
+	}
 
-		// update deltaAngle
-		deltaAngle = (x - xOrigin) * 0.003f;
+	if (key == 's')
+	{
+		float xrotrad, yrotrad;
+		yrotrad = (yrot / 180 * 3.141592654f);
+		xrotrad = (xrot / 180 * 3.141592654f);
+		xpos -= float(sin(yrotrad));
+		zpos += float(cos(yrotrad));
+		ypos += float(sin(xrotrad));
+	}
 
-		// update camera's direction
-		lx = sin(angle + deltaAngle);
-		lz = -cos(angle + deltaAngle);
+	if (key == 'd')
+	{
+		float yrotrad;
+		yrotrad = (yrot / 180 * 3.141592654f);
+		xpos += float(cos(yrotrad) * 0.2);
+		zpos += float(sin(yrotrad) * 0.2);
+	}
+
+	if (key == 'a')
+	{
+		float yrotrad;
+		yrotrad = (yrot / 180 * 3.141592654f);
+		xpos -= float(cos(yrotrad) * 0.2);
+		zpos -= float(sin(yrotrad) * 0.2);
+	}
+
+	if (key == 27)
+	{
+		UnloadModel();
+		exit(0);
 	}
 }
 
-void mouseButton(int button, int state, int x, int y) {
+void mouseMovement(int x, int y) 
+{
+	float diffx = x - lastx; //check the difference between the current x and the last x position
+	float diffy = y - lasty; //check the difference between the current y and the last y position
+	lastx = x; //set lastx to the current x position
+	lasty = y; //set lasty to the current y position
+	xrot += diffy; //set the xrot to xrot with the addition of the difference in the y position
+	if (xrot > 90)
+		xrot = 90;
+	else if (xrot < -90)
+		xrot = -90;
 
-	// only start motion if the left button is pressed
-	if (button == GLUT_LEFT_BUTTON) {
-
-		// when the button is released
-		if (state == GLUT_UP) {
-			angle += deltaAngle;
-			xOrigin = -1;
-		}
-		else  {// state = GLUT_DOWN
-			xOrigin = x;
-		}
-	}
+	yrot += diffx; //set the xrot to yrot with the addition of the difference in the x position
 }
 
-int main(int argc, char **argv) {
-
-	// init GLUT and create window
+int main(int argc, char **argv) 
+{
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
-	glutInitWindowPosition(100,100);
-	glutInitWindowSize(800,500);
-	glutCreateWindow("OBJ_Loader");
-
-
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+	glutInitWindowSize(800, 600);
+	glutInitWindowPosition(100, 100);
+	glutCreateWindow("Pokedonuts");
+	srand((unsigned)time(0));
+	init();
 	InitApp("pikachu/P2_Pikachu.obj");
-	//InitApp("C:/Users/Sho3la/Desktop/houses 3D/EpicCitadel.obj");
-	//InitApp("model2/Alex.obj");
-	//InitApp("model3/monster.obj");
-	// register callbacks
-	glutDisplayFunc(renderScene);
-	glutReshapeFunc(changeSize);
-	glutIdleFunc(renderScene);
+	glutDisplayFunc(display);
+	glutIdleFunc(display);
+	glutReshapeFunc(reshape);
 
-	glutIgnoreKeyRepeat(1);
-	glutKeyboardFunc(processNormalKeys);
-	glutSpecialFunc(pressKey);
-	glutSpecialUpFunc(releaseKey);
+	glutPassiveMotionFunc(mouseMovement); //check for mouse	movement
 
-	// here are the two new functions
-	glutMouseFunc(mouseButton);
-	glutMotionFunc(mouseMove);
-
-
-	// enter GLUT event processing cycle
+	glutKeyboardFunc(keyboard);
 	glutMainLoop();
-
-	return 1;
+	return 0;
 }
