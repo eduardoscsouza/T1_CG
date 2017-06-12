@@ -44,40 +44,40 @@ void cube()
 {
 	glBegin(GL_QUADS);
 	//lower square
-	glVertex3f(0.1f, 0.1f, -0.1);
-	glVertex3f(0.1f, -0.1f, -0.1);
-	glVertex3f(-0.1f, 0.1f, -0.1);
-	glVertex3f(-0.1f, -0.1f, -0.1);
+	glVertex3f(1.0f, 1.0f, -1.0f);
+	glVertex3f(1.0f, -1.0f, -1.0f);
+	glVertex3f(-1.0f, 1.0f, -1.0f);
+	glVertex3f(-1.0f, -1.0f, -1.0f);
 
 	//upper square
-	glVertex3f(0.1f, 0.1f, 0.1);
-	glVertex3f(0.1f, -0.1f, 0.1);
-	glVertex3f(-0.1f, 0.1f, 0.1);
-	glVertex3f(-0.1f, -0.1f, 0.1);
+	glVertex3f(1.0f, 1.0f, 1.0f);
+	glVertex3f(1.0f, -1.0f, 1.0f);
+	glVertex3f(-1.0f, 1.0f, 1.0f);
+	glVertex3f(-1.0f, -1.0f, 1.0f);
 
 	//right square
-	glVertex3f(0.1f, 0.1f, 0.1);
-	glVertex3f(0.1f, 0.1f, -0.1);
-	glVertex3f(0.1f, -0.1f, 0.1);
-	glVertex3f(0.1f, -0.1f, -0.1);
+	glVertex3f(1.0f, 1.0f, 1.0f);
+	glVertex3f(1.0f, 1.0f, -1.0f);
+	glVertex3f(1.0f, -1.0f, 1.0f);
+	glVertex3f(1.0f, -1.0f, -1.0f);
 
 	//left square
-	glVertex3f(-0.1f, 0.1f, 0.1);
-	glVertex3f(-0.1f, 0.1f, -0.1);
-	glVertex3f(-0.1f, -0.1f, 0.1);
-	glVertex3f(-0.1f, -0.1f, -0.1);
+	glVertex3f(-1.0f, 1.0f, 1.0f);
+	glVertex3f(-1.0f, 1.0f, -1.0f);
+	glVertex3f(-1.0f, -1.0f, 1.0f);
+	glVertex3f(-1.0f, -1.0f, -1.0f);
 
 	//front square
-	glVertex3f(0.1f, 0.1f, 0.1);
-	glVertex3f(0.1f, 0.1f, -0.1);
-	glVertex3f(-0.1f, 0.1f, 0.1);
-	glVertex3f(-0.1f, 0.1f, -0.1);
+	glVertex3f(1.0f, 1.0f, 1.0f);
+	glVertex3f(1.0f, 1.0f, -1.0f);
+	glVertex3f(-1.0f, 1.0f, 1.0f);
+	glVertex3f(-1.0f, 1.0f, -1.0f);
 
 	//back square
-	glVertex3f(0.1f, -0.1f, 0.1);
-	glVertex3f(0.1f, -0.1f, -0.1);
-	glVertex3f(-0.1f, -0.1f, 0.1);
-	glVertex3f(-0.1f, -0.1f, -0.1);
+	glVertex3f(1.0f, -1.0f, 1.0f);
+	glVertex3f(1.0f, -1.0f, -1.0f);
+	glVertex3f(-1.0f, -1.0f, 1.0f);
+	glVertex3f(-1.0f, -1.0f, -1.0f);
 	glEnd();
 }
 
