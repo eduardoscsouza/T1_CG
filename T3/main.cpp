@@ -55,7 +55,7 @@ void object(void)
 	for (int i=0; i<8; i++){
 		glPushMatrix();
 		glTranslatef((i&1) ? 10.0 : -10.0, (i&2) ? 10.0 : -10.0, (i&4) ? 10.0 : -10.0);
-		glutSolidCube(1.0);
+		glutSolidCube(3.0);
 		glPopMatrix();
 	}
 }
