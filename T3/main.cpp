@@ -39,7 +39,49 @@ void objectPositions(void)
 	}
 }
 
-//draw the cube
+//draws a cube
+void cube()
+{
+	glBegin(GL_QUADS);
+	//lower square
+	glVertex3f(0.1f, 0.1f, -0.1);
+	glVertex3f(0.1f, -0.1f, -0.1);
+	glVertex3f(-0.1f, 0.1f, -0.1);
+	glVertex3f(-0.1f, -0.1f, -0.1);
+
+	//upper square
+	glVertex3f(0.1f, 0.1f, 0.1);
+	glVertex3f(0.1f, -0.1f, 0.1);
+	glVertex3f(-0.1f, 0.1f, 0.1);
+	glVertex3f(-0.1f, -0.1f, 0.1);
+
+	//right square
+	glVertex3f(0.1f, 0.1f, 0.1);
+	glVertex3f(0.1f, 0.1f, -0.1);
+	glVertex3f(0.1f, -0.1f, 0.1);
+	glVertex3f(0.1f, -0.1f, -0.1);
+
+	//left square
+	glVertex3f(-0.1f, 0.1f, 0.1);
+	glVertex3f(-0.1f, 0.1f, -0.1);
+	glVertex3f(-0.1f, -0.1f, 0.1);
+	glVertex3f(-0.1f, -0.1f, -0.1);
+
+	//front square
+	glVertex3f(0.1f, 0.1f, 0.1);
+	glVertex3f(0.1f, 0.1f, -0.1);
+	glVertex3f(-0.1f, 0.1f, 0.1);
+	glVertex3f(-0.1f, 0.1f, -0.1);
+
+	//back square
+	glVertex3f(0.1f, -0.1f, 0.1);
+	glVertex3f(0.1f, -0.1f, -0.1);
+	glVertex3f(-0.1f, -0.1f, 0.1);
+	glVertex3f(-0.1f, -0.1f, -0.1);
+	glEnd();
+}
+
+//draw the donuts
 void object(void) 
 {
 	for (int i = 0; i<10; i++)
@@ -48,6 +90,14 @@ void object(void)
 		glTranslated(-positionx[i + 1] * 10, -positiony[i + 1] * 10, -positionz[i + 1] * 10); //translate the cube
 		glColor3f(colors[i][0], colors[i][1], colors[i][2]);
 		glutSolidTorus(2.5, 8.5, 50, 50);
+		glPopMatrix();
+	}
+
+	glColor3f(1.0, 0.0, 1.0);
+	for (int i=0; i<8; i++){
+		glPushMatrix();
+		glTranslatef((i&1) ? 1.0 : -1.0, (i&2) ? 1.0 : -1.0, (i&4) ? 1.0 : -1.0);
+		cube();
 		glPopMatrix();
 	}
 }
