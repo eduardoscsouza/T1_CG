@@ -1,3 +1,11 @@
+/*
+Eduardo Santos Carlos de Souza
+9293481
+
+Leonardo Cesar Cerqueira
+8937483
+*/
+
 #include <cstdlib>
 #include <cmath>
 #include <ctime>
