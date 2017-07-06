@@ -10,7 +10,13 @@ Leonardo Cesar Cerqueira
 #include <cmath>
 #include <cstring>
 
+#include <iostream>
 #include <vector>
+
+#define LIGHT_STEP 0.05f
+#define LIGHT_DELAY 40
+
+#define FPS 60
 
 using namespace std;
 
@@ -83,13 +89,13 @@ public:
 
 	void draw()
 	{
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, this->color);
-		glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS,this->expoent);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, this->sparkle);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, this->radiance);
+		glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, this->color);
+		glMaterialf(GL_FRONT, GL_SHININESS,this->expoent);
+		glMaterialfv(GL_FRONT, GL_SPECULAR, this->sparkle);
+		glMaterialfv(GL_FRONT, GL_EMISSION, this->radiance);
 
 		glBegin(GL_QUADS);
-		for (int i=0; i<this->points.size()-1; i++){
+		for (int i=1; i<this->points.size()-2; i++){
 			for (int j=0; j<this->points[i].size()-1; j++){
 				glNormal3f(this->points[i][j].x, this->points[i][j].y, this->points[i][j].z);
 				glVertex3f(this->points[i][j].x, this->points[i][j].y, this->points[i][j].z);
@@ -100,6 +106,25 @@ public:
 				glNormal3f(this->points[i+1][j].x, this->points[i+1][j].y, this->points[i+1][j].z);
 				glVertex3f(this->points[i+1][j].x, this->points[i+1][j].y, this->points[i+1][j].z);
 			}
+		}
+		glEnd();
+
+		glBegin(GL_TRIANGLES);
+		for (int i=0; i<this->points[1].size()-1; i++){
+			glNormal3f(this->points[0][0].x, this->points[0][0].y, this->points[0][0].z);
+			glVertex3f(this->points[0][0].x, this->points[0][0].y, this->points[0][0].z);
+			glNormal3f(this->points[1][i].x, this->points[1][i].y, this->points[1][i].z);
+			glVertex3f(this->points[1][i].x, this->points[1][i].y, this->points[1][i].z);
+			glNormal3f(this->points[1][i+1].x, this->points[1][i+1].y, this->points[1][i+1].z);
+			glVertex3f(this->points[1][i+1].x, this->points[1][i+1].y, this->points[1][i+1].z);
+
+			int lin = this->points.size()-1;
+			glNormal3f(this->points[lin][0].x, this->points[lin][0].y, this->points[lin][0].z);
+			glVertex3f(this->points[lin][0].x, this->points[lin][0].y, this->points[lin][0].z);
+			glNormal3f(this->points[lin-1][i].x, this->points[lin-1][i].y, this->points[lin-1][i].z);
+			glVertex3f(this->points[lin-1][i].x, this->points[lin-1][i].y, this->points[lin-1][i].z);
+			glNormal3f(this->points[lin-1][i+1].x, this->points[lin-1][i+1].y, this->points[lin-1][i+1].z);
+			glVertex3f(this->points[lin-1][i+1].x, this->points[lin-1][i+1].y, this->points[lin-1][i+1].z);
 		}
 		glEnd();
 	}
@@ -138,6 +163,8 @@ public:
 
 Ellipsoid e;
 Light l;
+bool light_moving;
+char light_x_dir, light_y_dir, light_z_dir;
 
 
 
@@ -147,19 +174,28 @@ Desenha a cena completa
 void draw_all()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glLoadIdentity();
 	
 	l.shine();
-
-	glPushMatrix();
-	glScalef(0.5, 0.5f, 0.5f);
 	e.draw();
-	glPopMatrix();
 	
 	glutSwapBuffers();
 	glFlush();
 }
 
+
+
+void move_light(int value)
+{
+	bool again = false;
+	if (light_x_dir || light_y_dir || light_z_dir) again=true;
+
+	l.pos.x += light_x_dir * LIGHT_STEP;
+	l.pos.y += light_y_dir * LIGHT_STEP;
+	l.pos.z += light_z_dir * LIGHT_STEP;
+
+	if (again) glutTimerFunc(LIGHT_DELAY, &move_light, 0);
+	else light_moving = false;
+}
 
 
 /*
@@ -168,9 +204,11 @@ do teclado e solta
 */
 void special_up_call(int key, int x, int y)
 {
-	/*
-	if (key == GLUT_KEY_LEFT) ship_dir++;
-	else if (key == GLUT_KEY_RIGHT) ship_dir--;*/
+	
+	if (key == GLUT_KEY_LEFT) light_x_dir++;
+	else if (key == GLUT_KEY_RIGHT) light_x_dir--;
+	else if (key == GLUT_KEY_UP) light_y_dir--;
+	else if (key == GLUT_KEY_DOWN) light_y_dir++;
 }
 
 /*
@@ -179,9 +217,16 @@ do teclado e apertada
 */
 void special_down_call(int key, int x, int y)
 {
-	/*
-	if (key == GLUT_KEY_LEFT) ship_dir--;
-	else if (key == GLUT_KEY_RIGHT) ship_dir++;*/
+	
+	if (key == GLUT_KEY_LEFT) light_x_dir--;
+	else if (key == GLUT_KEY_RIGHT) light_x_dir++;
+	else if (key == GLUT_KEY_UP) light_y_dir++;
+	else if (key == GLUT_KEY_DOWN) light_y_dir--;
+	
+	if (!light_moving){
+		glutTimerFunc(0, &move_light, 0);
+		light_moving = true;
+	}
 }
 
 /*
@@ -190,14 +235,8 @@ do teclado e solta
 */
 void keyboard_up_call(unsigned char key, int x, int y)
 {
-	/*
-	if (key == ' ') {
-		if (!missile_firing) {
-			missile_firing = true;
-			missile_x = ship_x;
-			missile_y = SHIP_Y_OFFSET + (SHIP_SCALE * 0.5f) + (MISSILE_SCALE * 0.3f);
-		}
-	}*/
+	if (key=='p') light_z_dir--;
+	else if (key=='o') light_z_dir++;
 }
 
 /*
@@ -206,14 +245,21 @@ do teclado e apertada
 */
 void keyboard_down_call(unsigned char key, int x, int y)
 {
-	/*
-	if (key == ' ') {
-		if (!missile_firing) {
-			missile_firing = true;
-			missile_x = ship_x;
-			missile_y = SHIP_Y_OFFSET + (SHIP_SCALE * 0.5f) + (MISSILE_SCALE * 0.3f);
-		}
-	}*/
+	if (key=='p') light_z_dir++;
+	else if (key=='o') light_z_dir--;
+
+	if ((key=='p' || key=='o') && !light_moving){
+		glutTimerFunc(0, &move_light, 0);
+		light_moving = true;
+	}
+}
+
+
+
+void redraw(int value)
+{
+	glutPostRedisplay();
+	glutTimerFunc(1000/FPS, &redraw, 0);
 }
 
 
@@ -246,11 +292,13 @@ int main(int argc, char * argv[])
 	parameters[2][0] = parameters[2][1] = parameters[2][2] = parameters[2][3] = 1.0f;
 	parameters[3][0] = parameters[3][1] = parameters[3][2] = 0.0f;
 	parameters[3][3] = 1.0f;
-	e = Ellipsoid(2.0, 1.0, 1.0, (2.0*M_PI)/50.0, (M_PI)/50.0, parameters);
+	e = Ellipsoid(0.5, 0.25, 0.25, (2.0*M_PI)/60.0, (M_PI)/60.0, parameters);
 	for (int i=0; i<4; i++) free(parameters[i]);
 	free(parameters);
 
 	//Setar luz
+	light_moving = false;
+	light_x_dir = light_y_dir = light_z_dir = 0;
 	l = Light(0, Point3D(1.0f, 1.0f, -1.0f), NULL);
 
 	//Setar as funcoes de callback
@@ -258,9 +306,10 @@ int main(int argc, char * argv[])
 	glutSpecialFunc(&special_down_call);
 	glutKeyboardFunc(&keyboard_down_call);
 	glutSpecialUpFunc(&special_up_call);
-	glutKeyboardUpFunc(&keyboard_down_call);
+	glutKeyboardUpFunc(&keyboard_up_call);
 	glutDisplayFunc(&draw_all);
-	//glutTimerFunc(0, &move_ship, 0);
+	
+	glutTimerFunc(0, &redraw, 0);
 
 	glutMainLoop();
 
