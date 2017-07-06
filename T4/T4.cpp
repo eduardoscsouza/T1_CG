@@ -37,7 +37,7 @@ public:
 	vector<vector<Point3D> > points;
 	GLfloat expoent, color[4], sparkle[4], radiance[4];
 
-	Ellipsoid() : Ellipsoid(1.0, 1.0, 1.0, (2.0*M_PI)/20.0, (M_PI)/20.0, NULL){}
+	Ellipsoid() : Ellipsoid(1.0, 1.0, 1.0, 0.25, 0.25, NULL){}
 	Ellipsoid(double a, double b, double c, double theta_step,  double phi_step, GLfloat ** parameters)
 	{
 		this->points = vector<vector<Point3D> >();
@@ -106,31 +106,39 @@ public:
 
 };
 
+class Light
+{
+public:
+	int idx;
+	Point3D pos;
+	GLfloat color[4];
+
+	Light() : Light(0, Point3D(0.0, 0.0, 0.0), NULL){}
+	Light(int idx, Point3D pos, GLfloat * color)
+	{
+		this->idx = idx;
+		this->pos = pos;
+		if (color==NULL) this->color[0] = this->color[1] = this->color[2] = this->color[3] = 1.0f;
+		else memcpy(this->color, color, 4*sizeof(GLfloat));
+	}
+
+	void shine()
+	{
+		GLfloat black[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+		GLfloat white[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+		glLightfv(GL_LIGHT0 + idx, GL_AMBIENT, black);
+		glLightfv(GL_LIGHT0 + idx, GL_DIFFUSE, this->color);
+		glLightfv(GL_LIGHT0 + idx, GL_SPECULAR, white);
+		GLfloat aux_pos[4] = {this->pos.x, this->pos.y, this->pos.z, 1.0f};
+		glLightfv(GL_LIGHT0 + idx, GL_POSITION, aux_pos);   
+	}
+};
+
 
 
 Ellipsoid e;
-Point3D light_pos;
+Light l;
 
-
-
-void DefineIluminacao ()
-{
-	GLfloat luzAmbiente[4]={0.0,0.0,0.0,0.0}; 
-	GLfloat luzDifusa[4]={1.0,1.0,1.0,1.0};
-	GLfloat luzEspecular[4]={1.0, 1.0, 1.0, 1.0};
-	GLfloat posicaoLuz[4]={1.0, 1.0, -1.0, 1.0};
-	// Define a refletância do material 
-	
-
-	// Ativa o uso da luz ambiente 
-	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, luzAmbiente);
-
-	// Define os parâmetros da luz de número 0
-	glLightfv(GL_LIGHT0, GL_AMBIENT, luzAmbiente); 
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, luzDifusa );
-	glLightfv(GL_LIGHT0, GL_SPECULAR, luzEspecular );
-	glLightfv(GL_LIGHT0, GL_POSITION, posicaoLuz );   
-}
 
 
 /*
@@ -141,15 +149,13 @@ void draw_all()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
 	
-	DefineIluminacao();
+	l.shine();
 
 	glPushMatrix();
 	glScalef(0.5, 0.5f, 0.5f);
-	glColor3f(0.0f, 0.0f, 1.0f);
 	e.draw();
 	glPopMatrix();
 	
-
 	glutSwapBuffers();
 	glFlush();
 }
@@ -227,6 +233,8 @@ int main(int argc, char * argv[])
 	glEnable(GL_LIGHTING);  
 	glEnable(GL_LIGHT0);
 	glEnable(GL_DEPTH_TEST);
+	GLfloat aux_color[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, aux_color);
 	//glShadeModel(GL_SMOOTH);
 
 	//Setar elipse
@@ -241,6 +249,9 @@ int main(int argc, char * argv[])
 	e = Ellipsoid(2.0, 1.0, 1.0, (2.0*M_PI)/50.0, (M_PI)/50.0, parameters);
 	for (int i=0; i<4; i++) free(parameters[i]);
 	free(parameters);
+
+	//Setar luz
+	l = Light(0, Point3D(1.0f, 1.0f, -1.0f), NULL);
 
 	//Setar as funcoes de callback
 	glutIgnoreKeyRepeat(1);
