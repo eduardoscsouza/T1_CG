@@ -8,6 +8,7 @@ Leonardo Cesar Cerqueira
 
 #include <GL/glut.h>
 #include <cmath>
+#include <cstring>
 
 #include <vector>
 
@@ -20,7 +21,7 @@ class Point3D
 public:
 	GLfloat x, y, z;
 
-	Point3D(){ this->x = this->y = this->z = 0.0; }
+	Point3D() : Point3D(0.0, 0.0, 0.0){}
 
 	Point3D(GLfloat x, GLfloat y, GLfloat z)
 	{
@@ -30,28 +31,26 @@ public:
 	}
 };
 
-
 class Ellipsoid
 {
 public:
 	vector<vector<Point3D> > points;
+	GLfloat expoent, color[4], sparkle[4], radiance[4];
 
-	Ellipsoid() : Ellipsoid(1.0, 1.0, 1.0, (2.0*M_PI)/10.0, (M_PI)/10.0){}
-	Ellipsoid(double a, double b, double c, double theta_step,  double phi_step)
+	Ellipsoid() : Ellipsoid(1.0, 1.0, 1.0, (2.0*M_PI)/20.0, (M_PI)/20.0, NULL){}
+	Ellipsoid(double a, double b, double c, double theta_step,  double phi_step, GLfloat ** parameters)
 	{
-		this->points = vector<vector<Point3D> >(((int)(M_PI/phi_step))+1);
-		for (int i=0; i<this->points.size(); i++) this->points[i] = vector<Point3D>(((int)((2.0*M_PI)/theta_step))+1);
+		this->points = vector<vector<Point3D> >();
 
-		int i = 0;
 		bool ikeep = true;
 		double phi = -(M_PI/2.0);
 		while(ikeep){
+			this->points.push_back(vector<Point3D>());
 			if (phi>=(M_PI/2.0)){
 				ikeep = false;
 				phi = (M_PI/2.0);
 			}
 
-			int j = 0;
 			bool jkeep = true;
 			double theta = 0.0;
 			while(jkeep){
@@ -60,17 +59,35 @@ public:
 					theta = (2.0*M_PI);
 				}
 
-				points[i][j++] = Point3D(a*cos(theta)*cos(phi), b*sin(theta)*cos(phi), c*sin(phi));
+				points[this->points.size()-1].push_back(Point3D(a*cos(theta)*cos(phi), b*sin(theta)*cos(phi), c*sin(phi)));
 				theta+=theta_step;
 			}
 
-			i++;
 			phi+=phi_step;
+		}
+
+		if (parameters==NULL){
+			this->expoent = 1.0;
+			this->color[0] = this->color[1] = this->color[2] = this->color[3] = 1.0f;
+			this->sparkle[0] = this->sparkle[1] = this->sparkle[2] = this->sparkle[3] = 1.0f;
+			this->radiance[0] = this->radiance[1] = this->radiance[2] = 0.0f;
+			this->radiance[3] = 1.0f;
+		}
+		else{
+			memcpy((&this->expoent), parameters[0], sizeof(GLfloat));
+			memcpy(this->color, parameters[1], 4*sizeof(GLfloat));
+			memcpy(this->sparkle, parameters[2], 4*sizeof(GLfloat));
+			memcpy(this->radiance, parameters[3], 4*sizeof(GLfloat));
 		}
 	}
 
 	void draw()
 	{
+		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, this->color);
+		glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS,this->expoent);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, this->sparkle);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, this->radiance);
+
 		glBegin(GL_QUADS);
 		for (int i=0; i<this->points.size()-1; i++){
 			for (int j=0; j<this->points[i].size()-1; j++){
@@ -92,30 +109,18 @@ public:
 
 
 Ellipsoid e;
+Point3D light_pos;
 
 
 
-// Função responsável pela especificação dos parâmetros de iluminação
-void DefineIluminacao (void)
+void DefineIluminacao ()
 {
-	GLfloat luzAmbiente[4]={1.0,1.0,1.0,1.0}; 
-	GLfloat luzDifusa[4]={1.0,1.0,1.0,1.0};	   // "cor" da fonte de luz 
-	GLfloat luzEspecular[4]={1.0, 1.0, 1.0, 1.0};// "brilho" 
+	GLfloat luzAmbiente[4]={0.0,0.0,0.0,0.0}; 
+	GLfloat luzDifusa[4]={1.0,1.0,1.0,1.0};
+	GLfloat luzEspecular[4]={1.0, 1.0, 1.0, 1.0};
 	GLfloat posicaoLuz[4]={1.0, 1.0, -1.0, 1.0};
-	GLfloat semCorEmissao[4]={0.0,0.0,0.0,1.0};
-
-	GLfloat diffuse[] = {0.5f, 0.5f, 0.8f, 1.0f};
-
-	// Capacidade de brilho do material
-	GLfloat especularidade[4]={1.0,1.0,1.0,1.0}; 
-
 	// Define a refletância do material 
-	glMaterialfv(GL_FRONT,GL_DIFFUSE, diffuse);
-	glMaterialfv(GL_FRONT,GL_SPECULAR, especularidade);
-	// Define a concentração do brilho
-	glMateriali(GL_FRONT,GL_SHININESS,100);
-
-	glMaterialfv(GL_FRONT,GL_EMISSION,semCorEmissao);
+	
 
 	// Ativa o uso da luz ambiente 
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, luzAmbiente);
@@ -139,7 +144,7 @@ void draw_all()
 	DefineIluminacao();
 
 	glPushMatrix();
-	glScalef(0.1, 0.1f, 0.1f);
+	glScalef(0.5, 0.5f, 0.5f);
 	glColor3f(0.0f, 0.0f, 1.0f);
 	e.draw();
 	glPopMatrix();
@@ -216,14 +221,26 @@ int main(int argc, char * argv[])
 	glutInitWindowSize(800, 600);
 	glutCreateWindow("Ellipsoid");
 
-	//Setar as variabeis globais e parametros do OpenGL
+	//Setar os parametros do OpenGL
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glMatrixMode(GL_MODELVIEW);
 	glEnable(GL_LIGHTING);  
 	glEnable(GL_LIGHT0);
 	glEnable(GL_DEPTH_TEST);
 	//glShadeModel(GL_SMOOTH);
-	e = Ellipsoid(1.0, 2.0, 4.0, (M_PI*10.0)/180.0, (M_PI*10.0)/180.0);
+
+	//Setar elipse
+	GLfloat ** parameters = (GLfloat**) malloc(4 * sizeof(GLfloat*));
+	for (int i=0; i<4; i++) parameters[i] = (GLfloat*) malloc(4 * sizeof(GLfloat));
+	parameters[0][0] = 1.0f;
+	parameters[1][1] = 0.0f;
+	parameters[1][0] = parameters[1][2] = parameters[1][3] = 1.0f;
+	parameters[2][0] = parameters[2][1] = parameters[2][2] = parameters[2][3] = 1.0f;
+	parameters[3][0] = parameters[3][1] = parameters[3][2] = 0.0f;
+	parameters[3][3] = 1.0f;
+	e = Ellipsoid(2.0, 1.0, 1.0, (2.0*M_PI)/50.0, (M_PI)/50.0, parameters);
+	for (int i=0; i<4; i++) free(parameters[i]);
+	free(parameters);
 
 	//Setar as funcoes de callback
 	glutIgnoreKeyRepeat(1);
@@ -235,5 +252,6 @@ int main(int argc, char * argv[])
 	//glutTimerFunc(0, &move_ship, 0);
 
 	glutMainLoop();
+
 	return 0;
 }
