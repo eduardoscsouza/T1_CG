@@ -16,6 +16,9 @@ Leonardo Cesar Cerqueira
 #define LIGHT_STEP 0.05f
 #define LIGHT_DELAY 40
 
+#define ROTATION_STEP 5.0f
+#define ROTATION_DELAY 40
+
 #define FPS 60
 
 using namespace std;
@@ -162,24 +165,50 @@ public:
 
 
 Ellipsoid e;
+bool el_rotating;
+GLfloat el_x_angle, el_y_angle, el_z_angle;
+char el_x_dir, el_y_dir, el_z_dir;
 Light l;
 bool light_moving;
 char light_x_dir, light_y_dir, light_z_dir;
 
 
-
+GLfloat p = 1.0f;
 /*
 Desenha a cena completa
 */
 void draw_all()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	
+	glLoadIdentity();
+
 	l.shine();
+/*
+	glPushMatrix();
+	glBegin(GL_QUADS);
+	GLfloat ambient[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, ambient);
+	glMaterialf(GL_FRONT, GL_SHININESS,1);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, ambient);
+	glNormal3f(0.0f, 0.0f, 1.0f);
+	glVertex3f(-1.0f, -1.0f, 0.0f);
+	glVertex3f(1.0f, -1.0f, 0.0f);
+	glVertex3f(1.0f, 1.0f, 0.0f);
+	glVertex3f(-1.0f, 1.0f, 0.0f);
+	glEnd();
+	glPopMatrix();*/
+
+	glPushMatrix();
+	glRotatef(el_z_angle, 0.0f, 0.0f, 1.0f);
+	glRotatef(el_y_angle, 0.0f, 1.0f, 0.0f);
+	glRotatef(el_x_angle, 1.0f, 0.0f, 0.0f);
 	e.draw();
+	glPopMatrix();
 	
 	glutSwapBuffers();
 	glFlush();
+
+	p-=0.01;
 }
 
 
@@ -196,6 +225,20 @@ void move_light(int value)
 	if (again) glutTimerFunc(LIGHT_DELAY, &move_light, 0);
 	else light_moving = false;
 }
+
+void change_angle(int value)
+{
+	bool again = false;
+	if (el_x_dir || el_y_dir || el_z_dir) again=true;
+
+	el_x_angle += el_x_dir * ROTATION_STEP;
+	el_y_angle += el_y_dir * ROTATION_STEP;
+	el_z_angle += el_z_dir * ROTATION_STEP;
+cout<<el_x_angle<<endl;
+	if (again) glutTimerFunc(ROTATION_DELAY, &change_angle, 0);
+	else el_rotating = false;
+}
+
 
 
 /*
@@ -237,6 +280,12 @@ void keyboard_up_call(unsigned char key, int x, int y)
 {
 	if (key=='p') light_z_dir--;
 	else if (key=='o') light_z_dir++;
+	else if (key=='q') el_x_dir++;
+	else if (key=='a') el_x_dir--;
+	else if (key=='w') el_y_dir--;
+	else if (key=='s') el_y_dir++;
+	else if (key=='e') el_z_dir++;
+	else if (key=='d') el_z_dir--;
 }
 
 /*
@@ -247,10 +296,20 @@ void keyboard_down_call(unsigned char key, int x, int y)
 {
 	if (key=='p') light_z_dir++;
 	else if (key=='o') light_z_dir--;
+	else if (key=='q') el_x_dir--;
+	else if (key=='a') el_x_dir++;
+	else if (key=='w') el_y_dir++;
+	else if (key=='s') el_y_dir--;
+	else if (key=='e') el_z_dir--;
+	else if (key=='d') el_z_dir++;
 
 	if ((key=='p' || key=='o') && !light_moving){
 		glutTimerFunc(0, &move_light, 0);
 		light_moving = true;
+	}
+	else if (!el_rotating){
+		glutTimerFunc(0, &change_angle, 0);
+		el_rotating = true;
 	}
 }
 
@@ -279,11 +338,12 @@ int main(int argc, char * argv[])
 	glEnable(GL_LIGHTING);  
 	glEnable(GL_LIGHT0);
 	glEnable(GL_DEPTH_TEST);
-	GLfloat aux_color[4] = {0.0f, 0.0f, 0.0f, 1.0f};
-	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, aux_color);
+	GLfloat ambient[4] = {0.2f, 0.2f, 0.2f, 1.0f};
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
 	//glShadeModel(GL_SMOOTH);
 
 	//Setar elipse
+	el_x_angle = el_y_angle = el_z_angle = 0.0f;
 	GLfloat ** parameters = (GLfloat**) malloc(4 * sizeof(GLfloat*));
 	for (int i=0; i<4; i++) parameters[i] = (GLfloat*) malloc(4 * sizeof(GLfloat));
 	parameters[0][0] = 1.0f;
