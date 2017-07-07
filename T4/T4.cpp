@@ -21,6 +21,12 @@ Leonardo Cesar Cerqueira
 
 #define FPS 60
 
+GLfloat white[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+GLfloat black[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+GLfloat red[4] = {1.0f, 0.0f, 0.0f, 1.0f};
+GLfloat green[4] = {0.0f, 1.0f, 0.0f, 1.0f};
+GLfloat blue[4] = {0.0f, 0.0f, 1.0f, 1.0f};
+
 using namespace std;
 
 
@@ -173,7 +179,49 @@ bool light_moving;
 char light_x_dir, light_y_dir, light_z_dir;
 
 
-GLfloat p = 1.0f;
+void draw_room()
+{
+	glBegin(GL_QUADS);
+	glMaterialf(GL_FRONT, GL_SHININESS, 1.0f);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, black);
+	glMaterialfv(GL_FRONT, GL_EMISSION, black);
+
+	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, red);
+	glNormal3f(-1.0f, 0.0f, 0.0f);
+	for (GLfloat i=-1.0f; i<1.0f; i+=0.1f){
+		for (GLfloat j=-1.0f; j<1.0f; j+=0.1f){
+			glVertex3f(1.0f, i, j);
+			glVertex3f(1.0f, i+0.1f, j);
+			glVertex3f(1.0f, i+0.1f, j+0.1f);
+			glVertex3f(1.0f, i, j+0.1f);
+		}
+	}
+	
+	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, green);
+	glNormal3f(0.0f, 0.0f, -1.0f);
+	for (GLfloat i=1.0f; i>-1.0f; i-=0.1f){
+		for (GLfloat j=-1.0f; j<1.0f; j+=0.1f){
+			glVertex3f(i, j, 1.0f);
+			glVertex3f(i-0.1f, j, 1.0f);
+			glVertex3f(i-0.1f, j+0.1f, 1.0f);
+			glVertex3f(i, j+0.1f, 1.0f);
+		}
+	}
+
+	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, blue);
+	glNormal3f(0.0f, 1.0f, 0.0f);
+	for (GLfloat i=-1.0f; i<1.0f; i+=0.1f){
+		for (GLfloat j=-1.0f; j<1.0f; j+=0.1f){
+			glVertex3f(i, -1.0f, j);
+			glVertex3f(i, -1.0f, j+0.1f);
+			glVertex3f(i+0.1f, -1.0f, j+0.1f);
+			glVertex3f(i+0.1f, -1.0f, j);
+		}
+	}
+	glEnd();
+
+}
+
 /*
 Desenha a cena completa
 */
@@ -183,20 +231,12 @@ void draw_all()
 	glLoadIdentity();
 
 	l.shine();
-/*
 	glPushMatrix();
-	glBegin(GL_QUADS);
-	GLfloat ambient[4] = {1.0f, 1.0f, 1.0f, 1.0f};
-	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, ambient);
-	glMaterialf(GL_FRONT, GL_SHININESS,1);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, ambient);
-	glNormal3f(0.0f, 0.0f, 1.0f);
-	glVertex3f(-1.0f, -1.0f, 0.0f);
-	glVertex3f(1.0f, -1.0f, 0.0f);
-	glVertex3f(1.0f, 1.0f, 0.0f);
-	glVertex3f(-1.0f, 1.0f, 0.0f);
-	glEnd();
-	glPopMatrix();*/
+	glTranslatef(l.pos.x, l.pos.y, l.pos.z);
+	glutWireCube(0.1);
+	glPopMatrix();
+
+	draw_room();
 
 	glPushMatrix();
 	glRotatef(el_z_angle, 0.0f, 0.0f, 1.0f);
@@ -207,8 +247,6 @@ void draw_all()
 	
 	glutSwapBuffers();
 	glFlush();
-
-	p-=0.01;
 }
 
 
@@ -234,7 +272,7 @@ void change_angle(int value)
 	el_x_angle += el_x_dir * ROTATION_STEP;
 	el_y_angle += el_y_dir * ROTATION_STEP;
 	el_z_angle += el_z_dir * ROTATION_STEP;
-cout<<el_x_angle<<endl;
+
 	if (again) glutTimerFunc(ROTATION_DELAY, &change_angle, 0);
 	else el_rotating = false;
 }
@@ -333,14 +371,19 @@ int main(int argc, char * argv[])
 	glutCreateWindow("Ellipsoid");
 
 	//Setar os parametros do OpenGL
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glMatrixMode(GL_PROJECTION);
+	gluPerspective(45.0f, 1.0f, 1.0f, 10.0f); 
+	gluLookAt(-2.0f, 2.0f, -2.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f);
 	glMatrixMode(GL_MODELVIEW);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glEnable(GL_LIGHTING);  
 	glEnable(GL_LIGHT0);
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_NORMALIZE);
+
 	GLfloat ambient[4] = {0.2f, 0.2f, 0.2f, 1.0f};
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
-	//glShadeModel(GL_SMOOTH);
+	glShadeModel(GL_SMOOTH);
 
 	//Setar elipse
 	el_x_angle = el_y_angle = el_z_angle = 0.0f;
@@ -359,7 +402,7 @@ int main(int argc, char * argv[])
 	//Setar luz
 	light_moving = false;
 	light_x_dir = light_y_dir = light_z_dir = 0;
-	l = Light(0, Point3D(1.0f, 1.0f, -1.0f), NULL);
+	l = Light(0, Point3D(0.0f, 0.5f, 0.0f), NULL);
 
 	//Setar as funcoes de callback
 	glutIgnoreKeyRepeat(1);
