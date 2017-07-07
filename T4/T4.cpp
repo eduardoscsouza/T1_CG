@@ -1,36 +1,39 @@
 /*
 Eduardo Santos Carlos de Souza
 9293481
-
-Leonardo Cesar Cerqueira
-8937483
 */
 
 #include <GL/glut.h>
 #include <cmath>
 #include <cstring>
 
-#include <iostream>
 #include <vector>
 
+//Macros para auxiliar no codigo
 #define LIGHT_STEP 0.05f
 #define LIGHT_DELAY 40
 
 #define ROTATION_STEP 5.0f
 #define ROTATION_DELAY 40
 
+#define ZOOM_STEP 0.05f
+#define ZOOM_DELAY 40
+
 #define FPS 60
 
+#define AMBIENT_COLOR {0.2f, 0.2f, 0.2f}
+
+//Vetores de cor para auxiliar no codigo
 GLfloat white[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 GLfloat black[4] = {0.0f, 0.0f, 0.0f, 1.0f};
-GLfloat red[4] = {1.0f, 0.0f, 0.0f, 1.0f};
-GLfloat green[4] = {0.0f, 1.0f, 0.0f, 1.0f};
-GLfloat blue[4] = {0.0f, 0.0f, 1.0f, 1.0f};
 
 using namespace std;
 
 
 
+/*
+Classe para um ponto em 3 dimensoes
+*/
 class Point3D
 {
 public:
@@ -46,17 +49,30 @@ public:
 	}
 };
 
+/*
+Classe que gera a malha poligonal da elipse,
+e a desenha com a cor e as normais
+*/
 class Ellipsoid
 {
 public:
 	vector<vector<Point3D> > points;
-	GLfloat expoent, color[4], sparkle[4], radiance[4];
+	GLfloat sparkle[4], color[4], radiance[4];
 
 	Ellipsoid() : Ellipsoid(1.0, 1.0, 1.0, 0.25, 0.25, NULL){}
 	Ellipsoid(double a, double b, double c, double theta_step,  double phi_step, GLfloat ** parameters)
 	{
 		this->points = vector<vector<Point3D> >();
 
+		/*
+		Loop que define os pontos da elipsoide
+		Ele utiliza a definicao da elipsoide em coordenadas polares,
+		e varia o Theta e o Phi de forma que variando o Phi gere-se
+		"fatias" da elipsoide, e dentro dessas fatias varia-se o theta para
+		completar o circulo.
+		Foi necessario um pouco de manipulação para garantir que sempre o ultimo
+		ponto do loop seja igual ao primeiro
+		*/
 		bool ikeep = true;
 		double phi = -(M_PI/2.0);
 		while(ikeep){
@@ -68,13 +84,14 @@ public:
 
 			bool jkeep = true;
 			double theta = 0.0;
+			int cur_line = this->points.size()-1;
 			while(jkeep){
 				if (theta>=(2.0*M_PI)){
 					jkeep = false;
 					theta = (2.0*M_PI);
 				}
 
-				points[this->points.size()-1].push_back(Point3D(a*cos(theta)*cos(phi), b*sin(theta)*cos(phi), c*sin(phi)));
+				points[cur_line].push_back(Point3D(a*cos(theta)*cos(phi), b*sin(theta)*cos(phi), c*sin(phi)));
 				theta+=theta_step;
 			}
 
@@ -82,27 +99,35 @@ public:
 		}
 
 		if (parameters==NULL){
-			this->expoent = 1.0;
-			this->color[0] = this->color[1] = this->color[2] = this->color[3] = 1.0f;
-			this->sparkle[0] = this->sparkle[1] = this->sparkle[2] = this->sparkle[3] = 1.0f;
-			this->radiance[0] = this->radiance[1] = this->radiance[2] = 0.0f;
-			this->radiance[3] = 1.0f;
+			memcpy(this->color, white, 4*sizeof(GLfloat));
+			memcpy(this->sparkle, white, 4*sizeof(GLfloat));
+			memcpy(this->radiance, black, 4*sizeof(GLfloat));
 		}
 		else{
-			memcpy((&this->expoent), parameters[0], sizeof(GLfloat));
-			memcpy(this->color, parameters[1], 4*sizeof(GLfloat));
-			memcpy(this->sparkle, parameters[2], 4*sizeof(GLfloat));
-			memcpy(this->radiance, parameters[3], 4*sizeof(GLfloat));
+			memcpy(this->color, parameters[0], 4*sizeof(GLfloat));
+			memcpy(this->sparkle, parameters[1], 4*sizeof(GLfloat));
+			memcpy(this->radiance, parameters[2], 4*sizeof(GLfloat));
 		}
 	}
 
 	void draw()
 	{
+		//Definicao das propriedade de cor do material
 		glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, this->color);
-		glMaterialf(GL_FRONT, GL_SHININESS,this->expoent);
+		glMaterialf(GL_FRONT, GL_SHININESS, 1.0f);
 		glMaterialfv(GL_FRONT, GL_SPECULAR, this->sparkle);
 		glMaterialfv(GL_FRONT, GL_EMISSION, this->radiance);
 
+		/*
+		Desenho da Elipsoide
+		As "fatias" intermediarias sao feitas com quadrados, de forma
+		que cada quadrado aproxime a região da superficie da elipse
+		de um intervalo de Phi e Theta. O topo e o fundo foram feitos com triangulos,
+		com as fatias adjacentes, ja que efetivamente so a um ponto nas fatias superiores
+		e inferiores.
+		Como é uma elipsoide centrada em (0,0) o vetor normal em cada ponto é paralelo ao vetor
+		da posição do ponto. Também, não foi necessário normalizar por haver habilitado o GL_NORMALIZE
+		*/
 		glBegin(GL_QUADS);
 		for (int i=1; i<this->points.size()-2; i++){
 			for (int j=0; j<this->points[i].size()-1; j++){
@@ -152,14 +177,12 @@ public:
 	{
 		this->idx = idx;
 		this->pos = pos;
-		if (color==NULL) this->color[0] = this->color[1] = this->color[2] = this->color[3] = 1.0f;
+		if (color==NULL) memcpy(this->color, white, 4*sizeof(GLfloat));
 		else memcpy(this->color, color, 4*sizeof(GLfloat));
 	}
 
 	void shine()
 	{
-		GLfloat black[4] = {0.0f, 0.0f, 0.0f, 1.0f};
-		GLfloat white[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 		glLightfv(GL_LIGHT0 + idx, GL_AMBIENT, black);
 		glLightfv(GL_LIGHT0 + idx, GL_DIFFUSE, this->color);
 		glLightfv(GL_LIGHT0 + idx, GL_SPECULAR, white);
@@ -177,50 +200,11 @@ char el_x_dir, el_y_dir, el_z_dir;
 Light l;
 bool light_moving;
 char light_x_dir, light_y_dir, light_z_dir;
+GLfloat camera_lin_pos;
+bool camera_moving;
+char camera_dir;
 
 
-void draw_room()
-{
-	glBegin(GL_QUADS);
-	glMaterialf(GL_FRONT, GL_SHININESS, 1.0f);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, black);
-	glMaterialfv(GL_FRONT, GL_EMISSION, black);
-
-	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, red);
-	glNormal3f(-1.0f, 0.0f, 0.0f);
-	for (GLfloat i=-1.0f; i<1.0f; i+=0.1f){
-		for (GLfloat j=-1.0f; j<1.0f; j+=0.1f){
-			glVertex3f(1.0f, i, j);
-			glVertex3f(1.0f, i+0.1f, j);
-			glVertex3f(1.0f, i+0.1f, j+0.1f);
-			glVertex3f(1.0f, i, j+0.1f);
-		}
-	}
-	
-	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, green);
-	glNormal3f(0.0f, 0.0f, -1.0f);
-	for (GLfloat i=1.0f; i>-1.0f; i-=0.1f){
-		for (GLfloat j=-1.0f; j<1.0f; j+=0.1f){
-			glVertex3f(i, j, 1.0f);
-			glVertex3f(i-0.1f, j, 1.0f);
-			glVertex3f(i-0.1f, j+0.1f, 1.0f);
-			glVertex3f(i, j+0.1f, 1.0f);
-		}
-	}
-
-	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, blue);
-	glNormal3f(0.0f, 1.0f, 0.0f);
-	for (GLfloat i=-1.0f; i<1.0f; i+=0.1f){
-		for (GLfloat j=-1.0f; j<1.0f; j+=0.1f){
-			glVertex3f(i, -1.0f, j);
-			glVertex3f(i, -1.0f, j+0.1f);
-			glVertex3f(i+0.1f, -1.0f, j+0.1f);
-			glVertex3f(i+0.1f, -1.0f, j);
-		}
-	}
-	glEnd();
-
-}
 
 /*
 Desenha a cena completa
@@ -231,12 +215,15 @@ void draw_all()
 	glLoadIdentity();
 
 	l.shine();
-	glPushMatrix();
-	glTranslatef(l.pos.x, l.pos.y, l.pos.z);
-	glutWireCube(0.1);
-	glPopMatrix();
 
-	draw_room();
+	glPushMatrix();
+	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, black);
+	glMaterialf(GL_FRONT, GL_SHININESS, 1.0f);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, black);
+	glMaterialfv(GL_FRONT, GL_EMISSION, white);
+	glTranslatef(l.pos.x, l.pos.y, l.pos.z);
+	glutSolidSphere(0.04, 10, 10);
+	glPopMatrix();
 
 	glPushMatrix();
 	glRotatef(el_z_angle, 0.0f, 0.0f, 1.0f);
@@ -275,6 +262,20 @@ void change_angle(int value)
 
 	if (again) glutTimerFunc(ROTATION_DELAY, &change_angle, 0);
 	else el_rotating = false;
+}
+
+void set_camera(int value)
+{
+	camera_lin_pos += camera_dir * ZOOM_STEP;
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(45.0f, 1.0f, 0.1f, 100.0f); 
+	gluLookAt(-2.0f + camera_lin_pos, 2.0f - camera_lin_pos, -2.0f + camera_lin_pos, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f);
+	glMatrixMode(GL_MODELVIEW);
+
+	if (camera_dir) glutTimerFunc(ZOOM_DELAY, &set_camera, 0);
+	else camera_moving = false;
 }
 
 
@@ -324,6 +325,8 @@ void keyboard_up_call(unsigned char key, int x, int y)
 	else if (key=='s') el_y_dir++;
 	else if (key=='e') el_z_dir++;
 	else if (key=='d') el_z_dir--;
+	else if (key=='m') camera_dir--;
+	else if (key=='n') camera_dir++;
 }
 
 /*
@@ -340,10 +343,16 @@ void keyboard_down_call(unsigned char key, int x, int y)
 	else if (key=='s') el_y_dir--;
 	else if (key=='e') el_z_dir--;
 	else if (key=='d') el_z_dir++;
+	else if (key=='m') camera_dir++;
+	else if (key=='n') camera_dir--;
 
 	if ((key=='p' || key=='o') && !light_moving){
 		glutTimerFunc(0, &move_light, 0);
 		light_moving = true;
+	}
+	else if ((key=='m' || key=='n') && !camera_moving){
+		glutTimerFunc(0, &set_camera, 0);
+		camera_moving = true;
 	}
 	else if (!el_rotating){
 		glutTimerFunc(0, &change_angle, 0);
@@ -367,13 +376,10 @@ int main(int argc, char * argv[])
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
 	glutInitWindowPosition(20, 20);
-	glutInitWindowSize(800, 600);
+	glutInitWindowSize(800, 800);
 	glutCreateWindow("Ellipsoid");
 
 	//Setar os parametros do OpenGL
-	glMatrixMode(GL_PROJECTION);
-	gluPerspective(45.0f, 1.0f, 1.0f, 10.0f); 
-	gluLookAt(-2.0f, 2.0f, -2.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f);
 	glMatrixMode(GL_MODELVIEW);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glEnable(GL_LIGHTING);  
@@ -381,28 +387,32 @@ int main(int argc, char * argv[])
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_NORMALIZE);
 
-	GLfloat ambient[4] = {0.2f, 0.2f, 0.2f, 1.0f};
+	GLfloat ambient[4] = AMBIENT_COLOR;
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
 	glShadeModel(GL_SMOOTH);
 
 	//Setar elipse
 	el_x_angle = el_y_angle = el_z_angle = 0.0f;
-	GLfloat ** parameters = (GLfloat**) malloc(4 * sizeof(GLfloat*));
-	for (int i=0; i<4; i++) parameters[i] = (GLfloat*) malloc(4 * sizeof(GLfloat));
-	parameters[0][0] = 1.0f;
-	parameters[1][1] = 0.0f;
-	parameters[1][0] = parameters[1][2] = parameters[1][3] = 1.0f;
-	parameters[2][0] = parameters[2][1] = parameters[2][2] = parameters[2][3] = 1.0f;
-	parameters[3][0] = parameters[3][1] = parameters[3][2] = 0.0f;
-	parameters[3][3] = 1.0f;
+	GLfloat ** parameters = (GLfloat**) malloc(3 * sizeof(GLfloat*));
+	for (int i=0; i<3; i++) parameters[i] = (GLfloat*) malloc(4 * sizeof(GLfloat));
+	parameters[0][0] = parameters[0][2] = parameters[0][3] = 1.0f;
+	parameters[0][1] = 0.0f;
+	memcpy(parameters[1], white, 4*sizeof(GLfloat));
+	memcpy(parameters[2], black, 4*sizeof(GLfloat));
 	e = Ellipsoid(0.5, 0.25, 0.25, (2.0*M_PI)/60.0, (M_PI)/60.0, parameters);
-	for (int i=0; i<4; i++) free(parameters[i]);
+	for (int i=0; i<3; i++) free(parameters[i]);
 	free(parameters);
 
 	//Setar luz
 	light_moving = false;
 	light_x_dir = light_y_dir = light_z_dir = 0;
-	l = Light(0, Point3D(0.0f, 0.5f, 0.0f), NULL);
+	l = Light(0, Point3D(0.0f, 0.5f, 0.0f), white);
+
+	//Setar camera
+	camera_lin_pos = 0.0f;
+	camera_moving = false;
+	camera_dir = 0;	
+	set_camera(0);
 
 	//Setar as funcoes de callback
 	glutIgnoreKeyRepeat(1);
