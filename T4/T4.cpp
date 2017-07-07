@@ -22,6 +22,18 @@ Eduardo Santos Carlos de Souza
 #define FPS 60
 
 #define AMBIENT_COLOR {0.2f, 0.2f, 0.2f}
+#define PHONG_EXPONENT 1.0f
+
+#define LIGHTBALL_SIZE 0.04f
+#define LIGHTBALL_SLICES 10
+
+#define FOV 45.0f
+#define ARATIO 1.0f
+#define ZNEAR 0.1f
+#define ZFAR 100.0f
+
+#define WINDOW_POS 20
+#define WINDOW_SIZE 600
 
 //Vetores de cor para auxiliar no codigo
 GLfloat white[4] = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -110,11 +122,14 @@ public:
 		}
 	}
 
+	/*
+	Funcao que desenha a elipsoide
+	*/
 	void draw()
 	{
 		//Definicao das propriedade de cor do material
 		glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, this->color);
-		glMaterialf(GL_FRONT, GL_SHININESS, 1.0f);
+		glMaterialf(GL_FRONT, GL_SHININESS, PHONG_EXPONENT);
 		glMaterialfv(GL_FRONT, GL_SPECULAR, this->sparkle);
 		glMaterialfv(GL_FRONT, GL_EMISSION, this->radiance);
 
@@ -165,9 +180,13 @@ public:
 
 };
 
+/*
+Classe que representa uma fonte de luz
+*/
 class Light
 {
 public:
+	//"idx" é o indice dessa luz nas GL_LIGHT
 	int idx;
 	Point3D pos;
 	GLfloat color[4];
@@ -181,6 +200,9 @@ public:
 		else memcpy(this->color, color, 4*sizeof(GLfloat));
 	}
 
+	/*
+	Funcao que define a luz na cena
+	*/
 	void shine()
 	{
 		glLightfv(GL_LIGHT0 + idx, GL_AMBIENT, black);
@@ -193,6 +215,7 @@ public:
 
 
 
+//Variaveis globais do programa
 Ellipsoid e;
 bool el_rotating;
 GLfloat el_x_angle, el_y_angle, el_z_angle;
@@ -214,17 +237,21 @@ void draw_all()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
 
+	//Definir a luz
 	l.shine();
 
+	//Desenhar uma esfera ao redor da fonte de luz,
+	//para que de para saber onde esta a luz
 	glPushMatrix();
 	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, black);
-	glMaterialf(GL_FRONT, GL_SHININESS, 1.0f);
+	glMaterialf(GL_FRONT, GL_SHININESS, PHONG_EXPONENT);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, black);
 	glMaterialfv(GL_FRONT, GL_EMISSION, white);
 	glTranslatef(l.pos.x, l.pos.y, l.pos.z);
-	glutSolidSphere(0.04, 10, 10);
+	glutSolidSphere(LIGHTBALL_SIZE, LIGHTBALL_SLICES, LIGHTBALL_SLICES);
 	glPopMatrix();
 
+	//Desenhar a elipsoide e aplicar as rotacoes nos eixos X, Y, Z
 	glPushMatrix();
 	glRotatef(el_z_angle, 0.0f, 0.0f, 1.0f);
 	glRotatef(el_y_angle, 0.0f, 1.0f, 0.0f);
@@ -238,6 +265,10 @@ void draw_all()
 
 
 
+/*
+Funcao que muda a posicao
+da fonte de luz quando necessario
+*/
 void move_light(int value)
 {
 	bool again = false;
@@ -251,6 +282,10 @@ void move_light(int value)
 	else light_moving = false;
 }
 
+/*
+Funcao que muda o angulo de rotacao
+da elipsoide
+*/
 void change_angle(int value)
 {
 	bool again = false;
@@ -264,13 +299,17 @@ void change_angle(int value)
 	else el_rotating = false;
 }
 
+/*
+Funcao que aproxima ou afasta o observador
+*/
 void set_camera(int value)
 {
 	camera_lin_pos += camera_dir * ZOOM_STEP;
 
+	//Definicao da projecao
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(45.0f, 1.0f, 0.1f, 100.0f); 
+	gluPerspective(FOV, ARATIO, ZNEAR, ZFAR); 
 	gluLookAt(-2.0f + camera_lin_pos, 2.0f - camera_lin_pos, -2.0f + camera_lin_pos, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f);
 	glMatrixMode(GL_MODELVIEW);
 
@@ -305,6 +344,7 @@ void special_down_call(int key, int x, int y)
 	else if (key == GLUT_KEY_UP) light_y_dir++;
 	else if (key == GLUT_KEY_DOWN) light_y_dir--;
 	
+	//Chamada das funcoes de update dos valores
 	if (!light_moving){
 		glutTimerFunc(0, &move_light, 0);
 		light_moving = true;
@@ -346,6 +386,7 @@ void keyboard_down_call(unsigned char key, int x, int y)
 	else if (key=='m') camera_dir++;
 	else if (key=='n') camera_dir--;
 
+	//Chamada das funcoes de update dos valores
 	if ((key=='p' || key=='o') && !light_moving){
 		glutTimerFunc(0, &move_light, 0);
 		light_moving = true;
@@ -362,6 +403,10 @@ void keyboard_down_call(unsigned char key, int x, int y)
 
 
 
+/*
+Funcao que constantemente desenha a cena
+com uma taxa de 60FPS
+*/
 void redraw(int value)
 {
 	glutPostRedisplay();
@@ -375,8 +420,8 @@ int main(int argc, char * argv[])
 	//Inicializacao do glut
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
-	glutInitWindowPosition(20, 20);
-	glutInitWindowSize(800, 800);
+	glutInitWindowPosition(WINDOW_POS, WINDOW_POS);
+	glutInitWindowSize(WINDOW_SIZE, WINDOW_SIZE);
 	glutCreateWindow("Ellipsoid");
 
 	//Setar os parametros do OpenGL
@@ -387,6 +432,7 @@ int main(int argc, char * argv[])
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_NORMALIZE);
 
+	//Definir o modelo de luz e a luz ambiente
 	GLfloat ambient[4] = AMBIENT_COLOR;
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
 	glShadeModel(GL_SMOOTH);
@@ -422,9 +468,9 @@ int main(int argc, char * argv[])
 	glutKeyboardUpFunc(&keyboard_up_call);
 	glutDisplayFunc(&draw_all);
 	
+	//Incializar o desenho
 	glutTimerFunc(0, &redraw, 0);
 
 	glutMainLoop();
-
 	return 0;
 }
